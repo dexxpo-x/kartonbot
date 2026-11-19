@@ -279,22 +279,13 @@
       const xc = Rp * Math.cos(Math.PI / N);
       const yc = P / 2;
 
-      // Seated roller radius with small clearance
-      const R1 = Math.max(0.2, D / 2 + 0.1);
+      const R1 = D / 2 + 0.1;
+      const ratio = Math.max(-1, Math.min(1, (R1 - 0.2 * P) / R1));
+      const thetaSweep = Math.acos(ratio);
 
-      // Tooth tip & sweep angle stabilized so thin rollers (like 04-1) keep a sharp #219-like tooth
-      const maxSweep = Math.min(Math.PI / (2 * N) * 1.4, 0.55);
-      const rawSweep = R1 > 0.2 * P
-        ? Math.acos(Math.max(-1, Math.min(1, (R1 - 0.2 * P) / R1)))
-        : maxSweep;
-      const thetaSweep = Math.min(rawSweep, maxSweep);
-
-      const tipOffset = Math.min(0.6 * P, Rp - (xc - R1) + 0.35 * P);
-      const X_tip = xc - R1 + tipOffset;
-      const tipHalfGap = Math.min(0.05 * P, P * 0.12 * Math.sin(Math.PI / N));
-
-      const P_tip_top = [X_tip, tipHalfGap];
-      const P_tip_bot = [X_tip, -tipHalfGap];
+      const X_tip = xc - R1 + 0.6 * P;
+      const P_tip_top = [X_tip, 0.05 * P];
+      const P_tip_bot = [X_tip, -0.05 * P];
 
       const d_L1_x = Math.cos(Math.PI + thetaSweep);
       const d_L1_y = Math.sin(Math.PI + thetaSweep);
