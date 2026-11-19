@@ -178,7 +178,7 @@
       <h2 class="section-title" style="margin-top:18px;">2. Sprocket Geometry</h2>
       <div class="group">
         <label for="teethInput">Number of Teeth (Z)</label>
-        <input type="number" id="teethInput" min="5" max="500" step="1" value="40" />
+        <input type="number" id="teethInput" min="5" max="500" step="1" value="26" />
       </div>
       <div class="group">
         <label for="holeInput">Shaft Bore (D) [mm]</label>
@@ -207,27 +207,28 @@
   </main>
 
   <script>
+    // ISO 606 / DIN 8187 / ANSI / Karting — true ROLLER diameters (d1)
     const CHAIN_DATA = {
       "#219 (Karting)": { pitch: 7.77, roller: 4.78 },
-      "#25 (Karting)": { pitch: 6.35, roller: 3.30 },
-      "#35 (Karting)": { pitch: 9.525, roller: 5.08 },
-      "#40 (Karting)": { pitch: 12.70, roller: 7.95 },
+      "#25 (Karting / ANSI 25)": { pitch: 6.35, roller: 3.30 },
+      "#35 (Karting / ANSI 35)": { pitch: 9.525, roller: 5.08 },
+      "#40 (Karting / ANSI 40)": { pitch: 12.70, roller: 7.95 },
 
-      "03-1 (5mm)": { pitch: 5.00, roller: 1.49 },
-      "04-1 (6mm)": { pitch: 6.00, roller: 1.85 },
-      "05B-1 (8mm)": { pitch: 8.00, roller: 2.31 },
-      '06B-1 (3/8")': { pitch: 9.525, roller: 3.28 },
-      '08B-1 (1/2")': { pitch: 12.70, roller: 4.45 },
-      '081 (1/2")': { pitch: 12.70, roller: 3.66 },
-      '084 (1/2")': { pitch: 12.70, roller: 4.09 },
-      '10B-1 (5/8")': { pitch: 15.875, roller: 5.08 },
-      '12B-1 (3/4")': { pitch: 19.05, roller: 5.72 },
-      '16B-1 (1")': { pitch: 25.40, roller: 8.28 },
-      '20B-1 (1 1/4")': { pitch: 31.75, roller: 10.19 },
-      '24B-1 (1 1/2")': { pitch: 38.10, roller: 14.63 },
-      '28B-1 (1 3/4")': { pitch: 44.45, roller: 15.90 },
-      '32B-1 (2")': { pitch: 50.80, roller: 17.81 },
-      '40B-1 (2 1/2")': { pitch: 63.50, roller: 22.89 },
+      "03-1 (5mm)": { pitch: 5.00, roller: 3.20 },
+      "04-1 (6mm)": { pitch: 6.00, roller: 3.30 },
+      "05B-1 (8mm)": { pitch: 8.00, roller: 5.00 },
+      '06B-1 (3/8")': { pitch: 9.525, roller: 6.35 },
+      '08B-1 (1/2")': { pitch: 12.70, roller: 8.51 },
+      '081 (1/2")': { pitch: 12.70, roller: 7.75 },
+      '084 (1/2")': { pitch: 12.70, roller: 7.75 },
+      '10B-1 (5/8")': { pitch: 15.875, roller: 10.16 },
+      '12B-1 (3/4")': { pitch: 19.05, roller: 12.07 },
+      '16B-1 (1")': { pitch: 25.40, roller: 15.88 },
+      '20B-1 (1 1/4")': { pitch: 31.75, roller: 19.05 },
+      '24B-1 (1 1/2")': { pitch: 38.10, roller: 25.40 },
+      '28B-1 (1 3/4")': { pitch: 44.45, roller: 27.94 },
+      '32B-1 (2")': { pitch: 50.80, roller: 29.21 },
+      '40B-1 (2 1/2")': { pitch: 63.50, roller: 39.37 },
 
       "CUSTOM": { pitch: 0, roller: 0 }
     };
@@ -283,39 +284,55 @@
       const ratio = Math.max(-1, Math.min(1, (R1 - 0.2 * P) / R1));
       const thetaSweep = Math.acos(ratio);
 
-      const X_tip = xc - R1 + 0.6 * P;
-      const P_tip_top = [X_tip, 0.05 * P];
-      const P_tip_bot = [X_tip, -0.05 * P];
-
       const d_L1_x = Math.cos(Math.PI + thetaSweep);
       const d_L1_y = Math.sin(Math.PI + thetaSweep);
       const P_1end_top = [xc + R1 * d_L1_x, yc + R1 * d_L1_y];
 
+      // Prevent ballooning when a custom/small roller has R1 < 0.2*P (d_L1_x > 0):
+      // keep tooth tip height consistent with standard roller proportions
+      let X_tip = xc - R1 + 0.6 * P;
+      const maxXTip = xc + 0.32 * P;
+      if (X_tip > maxXTip) X_tip = maxXTip;
+
+      const P_tip_top = [X_tip, 0.05 * P];
+      const P_tip_bot = [X_tip, -0.05 * P];
+
       const v12_x = P_tip_top[0] - P_1end_top[0];
       const v12_y = P_tip_top[1] - P_1end_top[1];
       const dot = d_L1_x * v12_x + d_L1_y * v12_y;
-      const s = Math.abs(dot) > 1e-6 ? (v12_x * v12_x + v12_y * v12_y) / (2 * dot) : 0;
 
-      const C2_top = [P_1end_top[0] + s * d_L1_x, P_1end_top[1] + s * d_L1_y];
-      const R2_top = Math.hypot(C2_top[0] - P_1end_top[0], C2_top[1] - P_1end_top[1]);
-
+      let baseTooth;
       const P_1end_bot = [P_1end_top[0], -P_1end_top[1]];
-      const C2_bot = [C2_top[0], -C2_top[1]];
       const C_bot = [xc, -yc];
       const C_top = [xc, yc];
 
-      const a_bot_flank_start = Math.atan2(P_1end_bot[1] - C2_bot[1], P_1end_bot[0] - C2_bot[0]);
-      const a_bot_flank_end = Math.atan2(P_tip_bot[1] - C2_bot[1], P_tip_bot[0] - C2_bot[0]);
-      const a_top_flank_start = Math.atan2(P_tip_top[1] - C2_top[1], P_tip_top[0] - C2_top[0]);
-      const a_top_flank_end = Math.atan2(P_1end_top[1] - C2_top[1], P_1end_top[0] - C2_top[0]);
+      // If tangent circle center flips outward (dot <= 0), use clean straight flank like #219
+      if (dot > 1e-4) {
+        const s = (v12_x * v12_x + v12_y * v12_y) / (2 * dot);
+        const C2_top = [P_1end_top[0] + s * d_L1_x, P_1end_top[1] + s * d_L1_y];
+        const R2_top = Math.hypot(C2_top[0] - P_1end_top[0], C2_top[1] - P_1end_top[1]);
+        const C2_bot = [C2_top[0], -C2_top[1]];
 
-      const baseTooth = [
-        ...interpolateArc(C_bot, R1, Math.PI - Math.PI / N, Math.PI - thetaSweep, stepsPerArc),
-        ...interpolateArc(C2_bot, R2_top, a_bot_flank_start, a_bot_flank_end, stepsPerArc),
-        P_tip_top,
-        ...interpolateArc(C2_top, R2_top, a_top_flank_start, a_top_flank_end, stepsPerArc),
-        ...interpolateArc(C_top, R1, Math.PI + thetaSweep, Math.PI + Math.PI / N, stepsPerArc),
-      ];
+        const a_bot_flank_start = Math.atan2(P_1end_bot[1] - C2_bot[1], P_1end_bot[0] - C2_bot[0]);
+        const a_bot_flank_end = Math.atan2(P_tip_bot[1] - C2_bot[1], P_tip_bot[0] - C2_bot[0]);
+        const a_top_flank_start = Math.atan2(P_tip_top[1] - C2_top[1], P_tip_top[0] - C2_top[0]);
+        const a_top_flank_end = Math.atan2(P_1end_top[1] - C2_top[1], P_1end_top[0] - C2_top[0]);
+
+        baseTooth = [
+          ...interpolateArc(C_bot, R1, Math.PI - Math.PI / N, Math.PI - thetaSweep, stepsPerArc),
+          ...interpolateArc(C2_bot, R2_top, a_bot_flank_start, a_bot_flank_end, stepsPerArc),
+          P_tip_top,
+          ...interpolateArc(C2_top, R2_top, a_top_flank_start, a_top_flank_end, stepsPerArc),
+          ...interpolateArc(C_top, R1, Math.PI + thetaSweep, Math.PI + Math.PI / N, stepsPerArc),
+        ];
+      } else {
+        baseTooth = [
+          ...interpolateArc(C_bot, R1, Math.PI - Math.PI / N, Math.PI - thetaSweep, stepsPerArc),
+          P_tip_bot,
+          P_tip_top,
+          ...interpolateArc(C_top, R1, Math.PI + thetaSweep, Math.PI + Math.PI / N, stepsPerArc),
+        ];
+      }
 
       const allPoints = [];
       for (let i = 0; i < N; i++) {
