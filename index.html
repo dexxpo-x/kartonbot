@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sprocket Generator — Web DXF</title>
+  <title>Sprocket Generator — Web DXF &amp; STL</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -13,6 +14,8 @@
       --muted: #94a3b8;
       --accent: #22c55e;
       --accent-hover: #16a34a;
+      --secondary: #38bdf8;
+      --secondary-hover: #0284c7;
       --border: #334155;
     }
     * { box-sizing: border-box; }
@@ -71,11 +74,37 @@
       margin: 0 0 10px 0;
     }
     .group { margin-bottom: 12px; }
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
     label {
       display: block;
       font-size: 0.9rem;
       margin-bottom: 4px;
       color: #e2e8f0;
+    }
+    .label-row label {
+      margin-bottom: 0;
+    }
+    .reset-hint {
+      font-size: 0.78rem;
+      color: var(--secondary);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      width: auto;
+      font-weight: 500;
+    }
+    .reset-hint:hover {
+      color: #7dd3fc;
     }
     select, input[type="number"] {
       width: 100%;
@@ -100,20 +129,27 @@
       font-size: 0.85rem;
       color: var(--muted);
     }
-    button {
+    button.btn-dxf, button.btn-stl {
       width: 100%;
-      padding: 12px 14px;
+      padding: 11px 14px;
       border: none;
       border-radius: 10px;
-      background: var(--accent);
-      color: #052e16;
       font-weight: 700;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       cursor: pointer;
       margin-top: 6px;
       transition: background 0.15s ease;
     }
-    button:hover { background: var(--accent-hover); }
+    .btn-dxf {
+      background: var(--accent);
+      color: #052e16;
+    }
+    .btn-dxf:hover { background: var(--accent-hover); }
+    .btn-stl {
+      background: var(--secondary);
+      color: #082f49;
+    }
+    .btn-stl:hover { background: var(--secondary-hover); color: #f8fafc; }
     .preview-wrap {
       display: flex;
       flex-direction: column;
@@ -155,8 +191,8 @@
 </head>
 <body>
   <header>
-    <h1>Sprocket Generator — DXF (AC1009 / R12)</h1>
-    <span>Live Preview • Bore as CIRCLE • DIN/ISO &amp; Karting</span>
+    <h1>Sprocket Generator — DXF &amp; STL</h1>
+    <span>Live Preview • Bore as CIRCLE • 3D Printable STL</span>
   </header>
 
   <main>
@@ -185,6 +221,13 @@
         <input type="number" id="holeInput" min="0" max="500" step="0.5" value="20" />
       </div>
       <div class="group">
+        <div class="label-row">
+          <label for="thicknessInput">Thickness (3D STL) [mm]</label>
+          <button type="button" id="resetThicknessBtn" class="reset-hint" title="Reset to standard thickness">Default: 7.2 mm</button>
+        </div>
+        <input type="number" id="thicknessInput" min="0.2" max="500" step="0.1" value="7.2" />
+      </div>
+      <div class="group">
         <div class="range-row">
           <label for="stepsInput" style="margin:0;">Arc Smoothness (segments)</label>
           <span id="stepsValue">15</span>
@@ -192,7 +235,8 @@
         <input type="range" id="stepsInput" min="5" max="60" step="1" value="15" />
       </div>
 
-      <button id="downloadBtn" type="button">DOWNLOAD DXF FILE</button>
+      <button id="downloadDxfBtn" class="btn-dxf" type="button">DOWNLOAD DXF FILE</button>
+      <button id="downloadStlBtn" class="btn-stl" type="button">DOWNLOAD STL FILE (3D)</button>
     </aside>
 
     <section class="card preview-wrap">
@@ -200,37 +244,38 @@
         <canvas id="previewCanvas"></canvas>
       </div>
       <div class="meta">
-        <div>Output file: <code id="filePreview">-</code></div>
+        <div>Files: <code id="filePreview">-</code></div>
         <div id="dimPreview">Pitch diameter: -</div>
       </div>
     </section>
   </main>
 
   <script>
-    // ISO 606 / DIN 8187 / ANSI / Karting — true ROLLER diameters (d1)
+    // ISO 606 / DIN 8187 / ANSI / Karting
+    // pitch (P) [mm], roller (d1) [mm], thickness (typical tooth width b1) [mm]
     const CHAIN_DATA = {
-      "#219 (Karting)": { pitch: 7.77, roller: 4.78 },
-      "#25 (Karting / ANSI 25)": { pitch: 6.35, roller: 3.30 },
-      "#35 (Karting / ANSI 35)": { pitch: 9.525, roller: 5.08 },
-      "#40 (Karting / ANSI 40)": { pitch: 12.70, roller: 7.95 },
+      "#219 (Karting)": { pitch: 7.77, roller: 4.78, thickness: 4.5 },
+      "#25 (Karting / ANSI 25)": { pitch: 6.35, roller: 3.30, thickness: 2.8 },
+      "#35 (Karting / ANSI 35)": { pitch: 9.525, roller: 5.08, thickness: 4.3 },
+      "#40 (Karting / ANSI 40)": { pitch: 12.70, roller: 7.95, thickness: 7.1 },
 
-      "03-1 (5mm)": { pitch: 5.00, roller: 3.20 },
-      "04-1 (6mm)": { pitch: 6.00, roller: 3.30 },
-      "05B-1 (8mm)": { pitch: 8.00, roller: 5.00 },
-      '06B-1 (3/8")': { pitch: 9.525, roller: 6.35 },
-      '08B-1 (1/2")': { pitch: 12.70, roller: 8.51 },
-      '081 (1/2")': { pitch: 12.70, roller: 7.75 },
-      '084 (1/2")': { pitch: 12.70, roller: 7.75 },
-      '10B-1 (5/8")': { pitch: 15.875, roller: 10.16 },
-      '12B-1 (3/4")': { pitch: 19.05, roller: 12.07 },
-      '16B-1 (1")': { pitch: 25.40, roller: 15.88 },
-      '20B-1 (1 1/4")': { pitch: 31.75, roller: 19.05 },
-      '24B-1 (1 1/2")': { pitch: 38.10, roller: 25.40 },
-      '28B-1 (1 3/4")': { pitch: 44.45, roller: 27.94 },
-      '32B-1 (2")': { pitch: 50.80, roller: 29.21 },
-      '40B-1 (2 1/2")': { pitch: 63.50, roller: 39.37 },
+      "03-1 (5mm)": { pitch: 5.00, roller: 3.20, thickness: 2.3 },
+      "04-1 (6mm)": { pitch: 6.00, roller: 3.30, thickness: 2.6 },
+      "05B-1 (8mm)": { pitch: 8.00, roller: 5.00, thickness: 2.8 },
+      '06B-1 (3/8")': { pitch: 9.525, roller: 6.35, thickness: 5.3 },
+      '08B-1 (1/2")': { pitch: 12.70, roller: 8.51, thickness: 7.2 },
+      '081 (1/2")': { pitch: 12.70, roller: 7.75, thickness: 3.0 },
+      '084 (1/2")': { pitch: 12.70, roller: 7.75, thickness: 4.5 },
+      '10B-1 (5/8")': { pitch: 15.875, roller: 10.16, thickness: 9.1 },
+      '12B-1 (3/4")': { pitch: 19.05, roller: 12.07, thickness: 11.1 },
+      '16B-1 (1")': { pitch: 25.40, roller: 15.88, thickness: 15.8 },
+      '20B-1 (1 1/4")': { pitch: 31.75, roller: 19.05, thickness: 18.2 },
+      '24B-1 (1 1/2")': { pitch: 38.10, roller: 25.40, thickness: 24.1 },
+      '28B-1 (1 3/4")': { pitch: 44.45, roller: 27.94, thickness: 29.2 },
+      '32B-1 (2")': { pitch: 50.80, roller: 29.21, thickness: 29.2 },
+      '40B-1 (2 1/2")': { pitch: 63.50, roller: 39.37, thickness: 36.4 },
 
-      "CUSTOM": { pitch: 0, roller: 0 }
+      "CUSTOM": { pitch: 0, roller: 0, thickness: 5.0 }
     };
 
     const TWO_PI = Math.PI * 2;
@@ -239,9 +284,12 @@
     const rollerInput = document.getElementById("rollerInput");
     const teethInput = document.getElementById("teethInput");
     const holeInput = document.getElementById("holeInput");
+    const thicknessInput = document.getElementById("thicknessInput");
+    const resetThicknessBtn = document.getElementById("resetThicknessBtn");
     const stepsInput = document.getElementById("stepsInput");
     const stepsValue = document.getElementById("stepsValue");
-    const downloadBtn = document.getElementById("downloadBtn");
+    const downloadDxfBtn = document.getElementById("downloadDxfBtn");
+    const downloadStlBtn = document.getElementById("downloadStlBtn");
     const canvas = document.getElementById("previewCanvas");
     const ctx = canvas.getContext("2d");
     const filePreview = document.getElementById("filePreview");
@@ -253,7 +301,17 @@
       opt.textContent = name;
       chainSelect.appendChild(opt);
     }
-    chainSelect.value = "#219 (Karting)";
+    chainSelect.value = '08B-1 (1/2")';
+
+    function getDefaultThickness() {
+      const info = CHAIN_DATA[chainSelect.value];
+      return info && typeof info.thickness === "number" ? info.thickness : 5.0;
+    }
+
+    function updateThicknessHint() {
+      const defT = getDefaultThickness();
+      resetThicknessBtn.textContent = `Default: ${defT} mm`;
+    }
 
     function mod2Pi(a) {
       return ((a % TWO_PI) + TWO_PI) % TWO_PI;
@@ -288,8 +346,6 @@
       const d_L1_y = Math.sin(Math.PI + thetaSweep);
       const P_1end_top = [xc + R1 * d_L1_x, yc + R1 * d_L1_y];
 
-      // Prevent ballooning when a custom/small roller has R1 < 0.2*P (d_L1_x > 0):
-      // keep tooth tip height consistent with standard roller proportions
       let X_tip = xc - R1 + 0.6 * P;
       const maxXTip = xc + 0.32 * P;
       if (X_tip > maxXTip) X_tip = maxXTip;
@@ -306,7 +362,6 @@
       const C_bot = [xc, -yc];
       const C_top = [xc, yc];
 
-      // If tangent circle center flips outward (dot <= 0), use clean straight flank like #219
       if (dot > 1e-4) {
         const s = (v12_x * v12_x + v12_y * v12_y) / (2 * dot);
         const C2_top = [P_1end_top[0] + s * d_L1_x, P_1end_top[1] + s * d_L1_y];
@@ -356,10 +411,15 @@
       const D = parseFloat(rollerInput.value);
       const N = parseInt(teethInput.value, 10);
       const holeDia = parseFloat(holeInput.value);
+      const thickness = parseFloat(thicknessInput.value);
       const steps = parseInt(stepsInput.value, 10);
       const chainShort = chainSelect.value.split(" ")[0].replace("#", "ANSI");
-      const filename = `${chainShort}_Z${N}_D${Math.round(holeDia)}.dxf`;
-      return { P, D, N, holeDia, steps, filename };
+      const base = `${chainShort}_Z${N}_D${Math.round(holeDia)}`;
+      return {
+        P, D, N, holeDia, thickness, steps,
+        dxfName: `${base}.dxf`,
+        stlName: `${base}_T${thickness}.stl`
+      };
     }
 
     function syncChainFields() {
@@ -367,18 +427,21 @@
       if (choice !== "CUSTOM" && CHAIN_DATA[choice]) {
         pitchInput.value = CHAIN_DATA[choice].pitch;
         rollerInput.value = CHAIN_DATA[choice].roller;
+        thicknessInput.value = CHAIN_DATA[choice].thickness;
         pitchInput.readOnly = true;
         rollerInput.readOnly = true;
       } else {
+        thicknessInput.value = CHAIN_DATA.CUSTOM.thickness;
         pitchInput.readOnly = false;
         rollerInput.readOnly = false;
       }
+      updateThicknessHint();
     }
 
     function drawPreview() {
       stepsValue.textContent = stepsInput.value;
-      const { P, D, N, holeDia, steps, filename } = getParams();
-      filePreview.textContent = filename;
+      const { P, D, N, holeDia, steps, dxfName, stlName } = getParams();
+      filePreview.textContent = `${dxfName} / ${stlName}`;
 
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
@@ -466,15 +529,88 @@
       return dxf;
     }
 
-    downloadBtn.addEventListener("click", () => {
-      const { P, D, N, holeDia, steps, filename } = getParams();
-      if (!(P > 0 && D > 0 && N >= 5 && steps >= 1)) {
-        alert("Please check input parameters (pitch > 0, roller > 0, teeth >= 5).");
-        return;
+    function computeNormal(a, b, c) {
+      const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+      const vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+      let nx = uy * vz - uz * vy;
+      let ny = uz * vx - ux * vz;
+      let nz = ux * vy - uy * vx;
+      const len = Math.hypot(nx, ny, nz) || 1;
+      return [nx / len, ny / len, nz / len];
+    }
+
+    function buildBinaryStl(pts, holeDia, thickness) {
+      const n = pts.length;
+      let minOuterR = Infinity;
+      for (const [x, y] of pts) {
+        minOuterR = Math.min(minOuterR, Math.hypot(x, y));
       }
-      const pts = generateSprocketPoints(P, D, N, steps);
-      const dxfContent = buildDxf(pts, holeDia);
-      const blob = new Blob([dxfContent], { type: "application/dxf;charset=utf-8" });
+
+      const hasBore = holeDia > 0 && holeDia / 2 < minOuterR * 0.92;
+      const boreR = hasBore ? holeDia / 2 : 0;
+      const innerR = hasBore ? boreR : Math.max(0.05, minOuterR * 0.25);
+
+      const innerPts = pts.map(([x, y]) => {
+        const ang = Math.atan2(y, x);
+        return [innerR * Math.cos(ang), innerR * Math.sin(ang)];
+      });
+
+      const triangles = [];
+      function addTri(a, b, c) {
+        const normal = computeNormal(a, b, c);
+        triangles.push([normal, a, b, c]);
+      }
+
+      const z0 = 0;
+      const z1 = thickness;
+
+      for (let i = 0; i < n; i++) {
+        const next = (i + 1) % n;
+        const o0 = pts[i];
+        const o1 = pts[next];
+        const in0 = innerPts[i];
+        const in1 = innerPts[next];
+
+        addTri([o0[0], o0[1], z0], [o1[0], o1[1], z0], [o1[0], o1[1], z1]);
+        addTri([o0[0], o0[1], z0], [o1[0], o1[1], z1], [o0[0], o0[1], z1]);
+
+        addTri([in0[0], in0[1], z1], [o0[0], o0[1], z1], [o1[0], o1[1], z1]);
+        addTri([in0[0], in0[1], z1], [o1[0], o1[1], z1], [in1[0], in1[1], z1]);
+
+        addTri([in0[0], in0[1], z0], [o1[0], o1[1], z0], [o0[0], o0[1], z0]);
+        addTri([in0[0], in0[1], z0], [in1[0], in1[1], z0], [o1[0], o1[1], z0]);
+
+        if (hasBore) {
+          addTri([in0[0], in0[1], z0], [in1[0], in1[1], z1], [in1[0], in1[1], z0]);
+          addTri([in0[0], in0[1], z0], [in0[0], in0[1], z1], [in1[0], in1[1], z1]);
+        }
+      }
+
+      const triCount = triangles.length;
+      const buffer = new ArrayBuffer(84 + triCount * 50);
+      const view = new DataView(buffer);
+
+      for (let i = 0; i < 80; i++) {
+        view.setUint8(i, 0);
+      }
+      view.setUint32(80, triCount, true);
+
+      let offset = 84;
+      for (const [norm, v1, v2, v3] of triangles) {
+        const verts = [norm, v1, v2, v3];
+        for (const vec of verts) {
+          view.setFloat32(offset, vec[0], true); offset += 4;
+          view.setFloat32(offset, vec[1], true); offset += 4;
+          view.setFloat32(offset, vec[2], true); offset += 4;
+        }
+        view.setUint16(offset, 0, true);
+        offset += 2;
+      }
+
+      return buffer;
+    }
+
+    function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -483,10 +619,37 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    downloadDxfBtn.addEventListener("click", () => {
+      const { P, D, N, holeDia, steps, dxfName } = getParams();
+      if (!(P > 0 && D > 0 && N >= 5 && steps >= 1)) {
+        alert("Please check input parameters (pitch > 0, roller > 0, teeth >= 5).");
+        return;
+      }
+      const pts = generateSprocketPoints(P, D, N, steps);
+      const dxfContent = buildDxf(pts, holeDia);
+      triggerDownload(new Blob([dxfContent], { type: "application/dxf;charset=utf-8" }), dxfName);
+    });
+
+    downloadStlBtn.addEventListener("click", () => {
+      const { P, D, N, holeDia, thickness, steps, stlName } = getParams();
+      if (!(P > 0 && D > 0 && N >= 5 && thickness > 0 && steps >= 1)) {
+        alert("Please check input parameters (pitch > 0, roller > 0, teeth >= 5, thickness > 0).");
+        return;
+      }
+      const pts = generateSprocketPoints(P, D, N, steps);
+      const stlBuffer = buildBinaryStl(pts, holeDia, thickness);
+      triggerDownload(new Blob([stlBuffer], { type: "application/octet-stream" }), stlName);
+    });
+
+    resetThicknessBtn.addEventListener("click", () => {
+      thicknessInput.value = getDefaultThickness();
+      drawPreview();
     });
 
     chainSelect.addEventListener("change", () => { syncChainFields(); drawPreview(); });
-    [pitchInput, rollerInput, teethInput, holeInput, stepsInput].forEach(el => {
+    [pitchInput, rollerInput, teethInput, holeInput, thicknessInput, stepsInput].forEach(el => {
       el.addEventListener("input", drawPreview);
     });
     window.addEventListener("resize", drawPreview);
