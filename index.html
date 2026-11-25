@@ -211,11 +211,12 @@
       color: #082f49;
     }
     .btn-stl:hover { background: var(--secondary-hover); color: #f8fafc; }
+
     .preview-wrap {
       display: flex;
       flex-direction: column;
       height: 100%;
-      min-height: 480px;
+      min-height: 500px;
     }
     .canvas-box {
       flex: 1;
@@ -233,6 +234,73 @@
       height: 100%;
       display: block;
     }
+    #glCanvas {
+      cursor: grab;
+    }
+    #glCanvas:active {
+      cursor: grabbing;
+    }
+
+    /* Floating viewport switcher & 3D controls */
+    .viewport-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .mode-switch, .view-tools {
+      pointer-events: auto;
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(6px);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .vp-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .vp-btn:hover {
+      color: var(--text);
+    }
+    .vp-btn.active {
+      background: var(--secondary);
+      color: #082f49;
+    }
+    .vp-btn.active-alt {
+      background: rgba(56, 189, 248, 0.22);
+      color: #7dd3fc;
+    }
+    .controls-hint {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: rgba(15, 23, 42, 0.78);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+      padding: 4px 9px;
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
     .meta {
       margin-top: 10px;
       display: flex;
@@ -253,7 +321,7 @@
 <body>
   <header>
     <h1>Sprocket Generator — DXF &amp; STL</h1>
-    <span>Live Preview • Shaft Bore &amp; Boss • Bolt &amp; Weight Relief Holes • 3D STL</span>
+    <span>Live 2D &amp; 3D Preview • Shaft Bore &amp; Boss • Bolt &amp; Weight Relief Holes • Watertight STL</span>
   </header>
 
   <main>
@@ -450,7 +518,23 @@
 
     <section class="card preview-wrap">
       <div class="canvas-box">
+        <div class="viewport-bar">
+          <div class="mode-switch">
+            <button type="button" id="mode2dBtn" class="vp-btn active">2D CAD</button>
+            <button type="button" id="mode3dBtn" class="vp-btn">3D STL</button>
+          </div>
+          <div id="tools3d" class="view-tools hidden">
+            <button type="button" id="toggleEdgesBtn" class="vp-btn">Edges</button>
+            <button type="button" id="resetCamBtn" class="vp-btn">Reset View</button>
+          </div>
+        </div>
+
         <canvas id="previewCanvas"></canvas>
+        <canvas id="glCanvas" class="hidden"></canvas>
+
+        <div id="controlsHint3d" class="controls-hint hidden">
+          LMB: Rotate • RMB / Shift+LMB: Pan • Scroll: Zoom
+        </div>
       </div>
       <div class="meta">
         <div>Files: <code id="filePreview">-</code></div>
@@ -538,13 +622,24 @@
 
     const downloadDxfBtn = document.getElementById("downloadDxfBtn");
     const downloadStlBtn = document.getElementById("downloadStlBtn");
+
+    const mode2dBtn = document.getElementById("mode2dBtn");
+    const mode3dBtn = document.getElementById("mode3dBtn");
+    const tools3d = document.getElementById("tools3d");
+    const toggleEdgesBtn = document.getElementById("toggleEdgesBtn");
+    const resetCamBtn = document.getElementById("resetCamBtn");
+    const controlsHint3d = document.getElementById("controlsHint3d");
+
     const canvas = document.getElementById("previewCanvas");
     const ctx = canvas.getContext("2d");
+    const glCanvas = document.getElementById("glCanvas");
     const filePreview = document.getElementById("filePreview");
     const dimPreview = document.getElementById("dimPreview");
 
     let customBoltPcd = false;
     let customReliefPcd = false;
+    let viewMode = "2d"; // "2d" | "3d"
+    let showEdges3D = false;
 
     for (const name of Object.keys(CHAIN_DATA)) {
       const opt = document.createElement("option");
@@ -869,142 +964,6 @@
       updateThicknessHint();
     }
 
-    function drawPreview() {
-      stepsValue.textContent = stepsInput.value;
-      const P0 = parseFloat(pitchInput.value);
-      const D0 = parseFloat(rollerInput.value);
-      const N0 = parseInt(teethInput.value, 10);
-      const steps0 = parseInt(stepsInput.value, 10);
-
-      if (P0 > 0 && D0 > 0 && N0 >= 5 && steps0 >= 1) {
-        const basePts = generateSprocketPoints(P0, D0, N0, steps0);
-        let minR0 = Infinity;
-        for (const [x, y] of basePts) minR0 = Math.min(minR0, Math.hypot(x, y));
-        syncDefaultRingDiameters(minR0);
-      }
-
-      syncFeatureUi();
-      const params = getParams();
-      const { P, D, N, holeDia, steps, dxfName, stlName } = params;
-      filePreview.textContent = `${dxfName} / ${stlName}`;
-
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
-      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      const w = rect.width;
-      const h = rect.height;
-      ctx.clearRect(0, 0, w, h);
-
-      if (!(P > 0 && D > 0 && N >= 5 && steps >= 1)) {
-        dimPreview.textContent = "Please enter valid parameters";
-        return;
-      }
-
-      const pts = generateSprocketPoints(P, D, N, steps);
-      const pitchDia = P / Math.sin(Math.PI / N);
-      dimPreview.textContent = `Pitch diameter: ${pitchDia.toFixed(2)} mm | Outline segments: ${pts.length}`;
-
-      let maxR = 1;
-      let minOuterR = Infinity;
-      for (const [x, y] of pts) {
-        const r = Math.hypot(x, y);
-        maxR = Math.max(maxR, r);
-        minOuterR = Math.min(minOuterR, r);
-      }
-
-      const cx = w / 2;
-      const cy = h / 2;
-      const scale = (Math.min(w, h) * 0.42) / maxR;
-
-      // Pitch circle
-      ctx.save();
-      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
-      ctx.setLineDash([5, 5]);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(cx, cy, (pitchDia / 2) * scale, 0, TWO_PI);
-      ctx.stroke();
-      ctx.restore();
-
-      // Hub / boss circle preview
-      if (params.hasHub && params.hubDia > 0) {
-        ctx.save();
-        ctx.strokeStyle = "#f59e0b";
-        ctx.setLineDash([4, 3]);
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.arc(cx, cy, (params.hubDia / 2) * scale, 0, TWO_PI);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      // Bolt holes & weight relief holes preview
-      const { boltCircles, reliefCircles } = getCutoutLayout(params, minOuterR);
-
-      for (const hc of boltCircles) {
-        ctx.strokeStyle = "#c084fc";
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.arc(cx + hc.cx * scale, cy - hc.cy * scale, hc.r * scale, 0, TWO_PI);
-        ctx.stroke();
-      }
-      for (const hc of reliefCircles) {
-        ctx.strokeStyle = "#fb923c";
-        ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        ctx.arc(cx + hc.cx * scale, cy - hc.cy * scale, hc.r * scale, 0, TWO_PI);
-        ctx.stroke();
-      }
-
-      // Sprocket outer contour
-      ctx.strokeStyle = "#4ade80";
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      pts.forEach(([x, y], idx) => {
-        const px = cx + x * scale;
-        const py = cy - y * scale;
-        if (idx === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      });
-      ctx.closePath();
-      ctx.stroke();
-
-      // Shaft bore preview
-      if (holeDia > 0) {
-        ctx.strokeStyle = "#38bdf8";
-        ctx.lineWidth = 1.6;
-        if (params.boreType === "round") {
-          ctx.beginPath();
-          ctx.arc(cx, cy, (holeDia / 2) * scale, 0, TWO_PI);
-          ctx.stroke();
-        } else {
-          const borePts = generateBorePolygon(params, 96);
-          if (borePts.length > 0) {
-            ctx.beginPath();
-            borePts.forEach(([x, y], idx) => {
-              const px = cx + x * scale;
-              const py = cy - y * scale;
-              if (idx === 0) ctx.moveTo(px, py);
-              else ctx.lineTo(px, py);
-            });
-            ctx.closePath();
-            ctx.stroke();
-          }
-        }
-      }
-
-      // Center crosshair
-      ctx.strokeStyle = "rgba(248, 250, 252, 0.35)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy);
-      ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8);
-      ctx.stroke();
-    }
-
     function appendDxfCircle(layer, cx, cy, r) {
       return (
         `0\nCIRCLE\n8\n${layer}\n` +
@@ -1298,10 +1257,14 @@
       return tris;
     }
 
-    function buildBinaryStl(pts, params) {
+    // Shared 3D mesh generator used by both Binary STL export and live WebGL 3D preview
+    function generateSprocketMesh(pts, params) {
       let minOuterR = Infinity;
+      let maxOuterR = 1;
       for (const [x, y] of pts) {
-        minOuterR = Math.min(minOuterR, Math.hypot(x, y));
+        const r = Math.hypot(x, y);
+        minOuterR = Math.min(minOuterR, r);
+        maxOuterR = Math.max(maxOuterR, r);
       }
 
       const maxBoreAllowed = minOuterR * 0.92;
@@ -1352,20 +1315,16 @@
         }
       }
 
-      // 1. Outer sprocket tooth wall (z0 -> zRim)
       addExtrudedWall(outerLoop, z0, zRim, true);
 
-      // 2. Inner shaft bore wall (z0 -> zHub)
       if (hasBore && boreLoop.length >= 3) {
         addExtrudedWall(boreLoop, z0, zHub, false);
       }
 
-      // 3. Cutout cylindrical walls (z0 -> zRim or zHub)
       for (const hc of allCutouts) {
         addExtrudedWall(hc.loop, z0, hc.inHub ? zHub : zRim, false);
       }
 
-      // 4. Unified bottom planar face at z = z0
       const bottomHoles = [];
       if (hasBore && boreLoop.length >= 3) bottomHoles.push(boreLoop);
       for (const hc of allCutouts) bottomHoles.push(hc.loop);
@@ -1375,7 +1334,6 @@
         addTri([a[0], a[1], z0], [c[0], c[1], z0], [b[0], b[1], z0]);
       }
 
-      // 5. Top planar faces
       if (useHub) {
         const rimTopHoles = [hubLoop];
         for (const hc of allCutouts) {
@@ -1403,6 +1361,11 @@
         }
       }
 
+      return { triangles, maxOuterR, maxZ: zHub };
+    }
+
+    function buildBinaryStl(pts, params) {
+      const { triangles } = generateSprocketMesh(pts, params);
       const triCount = triangles.length;
       const buffer = new ArrayBuffer(84 + triCount * 50);
       const view = new DataView(buffer);
@@ -1426,6 +1389,530 @@
 
       return buffer;
     }
+
+    // ==================== WebGL 3D Viewer ====================
+    const gl = glCanvas.getContext("webgl", { antialias: true, alpha: false });
+    let glState = null;
+
+    const cam = {
+      yaw: 0.58,
+      pitch: 0.72,
+      distance: 180,
+      target: [0, 0, 4],
+      initialized: false
+    };
+
+    function resetCamera(maxR = 60, maxZ = 8) {
+      cam.yaw = 0.58;
+      cam.pitch = 0.74;
+      cam.target = [0, 0, maxZ * 0.45];
+      cam.distance = Math.max(30, maxR * 2.55);
+      cam.initialized = true;
+    }
+
+    function initWebGL() {
+      if (!gl || glState) return glState;
+
+      const vsSrc = `
+        attribute vec3 aPos;
+        attribute vec3 aNorm;
+        uniform mat4 uProj;
+        uniform mat4 uView;
+        varying vec3 vNorm;
+        varying vec3 vPos;
+        void main() {
+          vPos = aPos;
+          vNorm = aNorm;
+          gl_Position = uProj * uView * vec4(aPos, 1.0);
+        }
+      `;
+      const fsSrc = `
+        precision mediump float;
+        varying vec3 vNorm;
+        varying vec3 vPos;
+        uniform vec3 uBaseColor;
+        uniform bool uUseLighting;
+        uniform vec3 uCamPos;
+        void main() {
+          if (!uUseLighting) {
+            gl_FragColor = vec4(uBaseColor, 1.0);
+            return;
+          }
+          vec3 n = normalize(vNorm);
+          if (!gl_FrontFacing) n = -n;
+          vec3 light1 = normalize(vec3(0.45, 0.65, 0.85));
+          vec3 light2 = normalize(vec3(-0.65, -0.45, 0.35));
+          vec3 viewDir = normalize(uCamPos - vPos);
+
+          float diff1 = max(dot(n, light1), 0.0);
+          float diff2 = max(dot(n, light2), 0.0) * 0.38;
+          float hemi = 0.30 + 0.14 * n.z;
+
+          vec3 halfVec = normalize(light1 + viewDir);
+          float spec = pow(max(dot(n, halfVec), 0.0), 36.0) * 0.24;
+
+          vec3 col = uBaseColor * (hemi + diff1 * 0.70 + diff2) + vec3(spec);
+          gl_FragColor = vec4(col, 1.0);
+        }
+      `;
+
+      function compile(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error(gl.getShaderInfoLog(s));
+          return null;
+        }
+        return s;
+      }
+
+      const vs = compile(gl.VERTEX_SHADER, vsSrc);
+      const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+      if (!vs || !fs) return null;
+
+      const prog = gl.createProgram();
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.error(gl.getProgramInfoLog(prog));
+        return null;
+      }
+
+      glState = {
+        prog,
+        aPos: gl.getAttribLocation(prog, "aPos"),
+        aNorm: gl.getAttribLocation(prog, "aNorm"),
+        uProj: gl.getUniformLocation(prog, "uProj"),
+        uView: gl.getUniformLocation(prog, "uView"),
+        uBaseColor: gl.getUniformLocation(prog, "uBaseColor"),
+        uUseLighting: gl.getUniformLocation(prog, "uUseLighting"),
+        uCamPos: gl.getUniformLocation(prog, "uCamPos"),
+        posBuf: gl.createBuffer(),
+        normBuf: gl.createBuffer(),
+        edgeBuf: gl.createBuffer(),
+        gridBuf: gl.createBuffer(),
+        triVertCount: 0,
+        edgeVertCount: 0,
+        gridVertCount: 0,
+        lastMaxR: 60,
+        lastMaxZ: 8
+      };
+
+      // Build print-bed grid at Z = 0
+      const gridLines = [];
+      const size = 120;
+      const step = 10;
+      for (let i = -size; i <= size; i += step) {
+        gridLines.push(i, -size, 0, i, size, 0);
+        gridLines.push(-size, i, 0, size, i, 0);
+      }
+      gl.bindBuffer(gl.ARRAY_BUFFER, glState.gridBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(gridLines), gl.STATIC_DRAW);
+      glState.gridVertCount = gridLines.length / 3;
+
+      return glState;
+    }
+
+    function updateWebGLMesh(pts, params) {
+      const state = initWebGL();
+      if (!state) return;
+
+      const { triangles, maxOuterR, maxZ } = generateSprocketMesh(pts, params);
+      state.lastMaxR = maxOuterR;
+      state.lastMaxZ = maxZ;
+
+      if (!cam.initialized) {
+        resetCamera(maxOuterR, maxZ);
+      }
+
+      const triCount = triangles.length;
+      const positions = new Float32Array(triCount * 9);
+      const normals = new Float32Array(triCount * 9);
+      const edges = new Float32Array(triCount * 18);
+
+      let pIdx = 0;
+      let eIdx = 0;
+      for (let i = 0; i < triCount; i++) {
+        const [n, a, b, c] = triangles[i];
+        const verts = [a, b, c];
+        for (let k = 0; k < 3; k++) {
+          const v = verts[k];
+          positions[pIdx] = v[0];
+          positions[pIdx + 1] = v[1];
+          positions[pIdx + 2] = v[2];
+          normals[pIdx] = n[0];
+          normals[pIdx + 1] = n[1];
+          normals[pIdx + 2] = n[2];
+          pIdx += 3;
+        }
+        // Triangle edges
+        edges[eIdx++] = a[0]; edges[eIdx++] = a[1]; edges[eIdx++] = a[2];
+        edges[eIdx++] = b[0]; edges[eIdx++] = b[1]; edges[eIdx++] = b[2];
+        edges[eIdx++] = b[0]; edges[eIdx++] = b[1]; edges[eIdx++] = b[2];
+        edges[eIdx++] = c[0]; edges[eIdx++] = c[1]; edges[eIdx++] = c[2];
+        edges[eIdx++] = c[0]; edges[eIdx++] = c[1]; edges[eIdx++] = c[2];
+        edges[eIdx++] = a[0]; edges[eIdx++] = a[1]; edges[eIdx++] = a[2];
+      }
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, positions, gl.DYNAMIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.normBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, normals, gl.DYNAMIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.edgeBuf);
+      gl.bufferData(gl.ARRAY_BUFFER, edges, gl.DYNAMIC_DRAW);
+
+      state.triVertCount = triCount * 3;
+      state.edgeVertCount = triCount * 6;
+    }
+
+    function mat4Perspective(fovRad, aspect, near, far) {
+      const f = 1.0 / Math.tan(fovRad / 2);
+      const nf = 1 / (near - far);
+      return new Float32Array([
+        f / aspect, 0, 0, 0,
+        0, f, 0, 0,
+        0, 0, (far + near) * nf, -1,
+        0, 0, 2 * far * near * nf, 0
+      ]);
+    }
+
+    function mat4LookAt(eye, target, up) {
+      let zx = eye[0] - target[0];
+      let zy = eye[1] - target[1];
+      let zz = eye[2] - target[2];
+      let len = Math.hypot(zx, zy, zz) || 1;
+      zx /= len; zy /= len; zz /= len;
+
+      let xx = up[1] * zz - up[2] * zy;
+      let xy = up[2] * zx - up[0] * zz;
+      let xz = up[0] * zy - up[1] * zx;
+      len = Math.hypot(xx, xy, xz) || 1;
+      xx /= len; xy /= len; xz /= len;
+
+      const yx = zy * xz - zz * xy;
+      const yy = zz * xx - zx * xz;
+      const yz = zx * xy - zy * xx;
+
+      return new Float32Array([
+        xx, yx, zx, 0,
+        xy, yy, zy, 0,
+        xz, yz, zz, 0,
+        -(xx * eye[0] + xy * eye[1] + xz * eye[2]),
+        -(yx * eye[0] + yy * eye[1] + yz * eye[2]),
+        -(zx * eye[0] + zy * eye[1] + zz * eye[2]),
+        1
+      ]);
+    }
+
+    function render3D() {
+      if (viewMode !== "3d") return;
+      const state = initWebGL();
+      if (!state) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rect = glCanvas.getBoundingClientRect();
+      const w = Math.max(1, Math.floor(rect.width * dpr));
+      const h = Math.max(1, Math.floor(rect.height * dpr));
+      if (glCanvas.width !== w || glCanvas.height !== h) {
+        glCanvas.width = w;
+        glCanvas.height = h;
+      }
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.035, 0.051, 0.086, 1.0);
+      gl.enable(gl.DEPTH_TEST);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      gl.useProgram(state.prog);
+
+      const cosP = Math.cos(cam.pitch);
+      const eye = [
+        cam.target[0] + cam.distance * cosP * Math.cos(cam.yaw),
+        cam.target[1] + cam.distance * cosP * Math.sin(cam.yaw),
+        cam.target[2] + cam.distance * Math.sin(cam.pitch)
+      ];
+
+      const proj = mat4Perspective(Math.PI / 4, w / h, 0.5, 5000);
+      const view = mat4LookAt(eye, cam.target, [0, 0, 1]);
+
+      gl.uniformMatrix4fv(state.uProj, false, proj);
+      gl.uniformMatrix4fv(state.uView, false, view);
+      gl.uniform3fv(state.uCamPos, eye);
+
+      // 1. Draw print bed grid at Z = 0
+      gl.uniform1i(state.uUseLighting, 0);
+      gl.uniform3f(state.uBaseColor, 0.14, 0.20, 0.30);
+      gl.bindBuffer(gl.ARRAY_BUFFER, state.gridBuf);
+      gl.enableVertexAttribArray(state.aPos);
+      gl.vertexAttribPointer(state.aPos, 3, gl.FLOAT, false, 0, 0);
+      gl.disableVertexAttribArray(state.aNorm);
+      gl.vertexAttrib3f(state.aNorm, 0, 0, 1);
+      gl.drawArrays(gl.LINES, 0, state.gridVertCount);
+
+      // 2. Draw solid sprocket mesh
+      if (state.triVertCount > 0) {
+        gl.uniform1i(state.uUseLighting, 1);
+        gl.uniform3f(state.uBaseColor, 0.22, 0.74, 0.97); // crisp metallic sky-blue CAD finish
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuf);
+        gl.enableVertexAttribArray(state.aPos);
+        gl.vertexAttribPointer(state.aPos, 3, gl.FLOAT, false, 0, 0);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, state.normBuf);
+        gl.enableVertexAttribArray(state.aNorm);
+        gl.vertexAttribPointer(state.aNorm, 3, gl.FLOAT, false, 0, 0);
+
+        gl.enable(gl.POLYGON_OFFSET_FILL);
+        gl.polygonOffset(1.0, 1.0);
+        gl.drawArrays(gl.TRIANGLES, 0, state.triVertCount);
+        gl.disable(gl.POLYGON_OFFSET_FILL);
+
+        // 3. Optional triangle wireframe overlay
+        if (showEdges3D && state.edgeVertCount > 0) {
+          gl.uniform1i(state.uUseLighting, 0);
+          gl.uniform3f(state.uBaseColor, 0.05, 0.15, 0.28);
+          gl.bindBuffer(gl.ARRAY_BUFFER, state.edgeBuf);
+          gl.enableVertexAttribArray(state.aPos);
+          gl.vertexAttribPointer(state.aPos, 3, gl.FLOAT, false, 0, 0);
+          gl.disableVertexAttribArray(state.aNorm);
+          gl.drawArrays(gl.LINES, 0, state.edgeVertCount);
+        }
+      }
+    }
+
+    // Orbit / Pan / Zoom mouse & touch controls for 3D canvas
+    let dragMode = null; // "orbit" | "pan"
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+
+    glCanvas.addEventListener("contextmenu", e => e.preventDefault());
+
+    glCanvas.addEventListener("mousedown", e => {
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+      if (e.button === 2 || e.button === 1 || e.shiftKey) {
+        dragMode = "pan";
+      } else if (e.button === 0) {
+        dragMode = "orbit";
+      }
+    });
+
+    window.addEventListener("mousemove", e => {
+      if (!dragMode || viewMode !== "3d") return;
+      const dx = e.clientX - lastMouseX;
+      const dy = e.clientY - lastMouseY;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+
+      if (dragMode === "orbit") {
+        cam.yaw -= dx * 0.008;
+        cam.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, cam.pitch + dy * 0.008));
+      } else if (dragMode === "pan") {
+        const panScale = cam.distance * 0.0014;
+        const rightX = -Math.sin(cam.yaw);
+        const rightY = Math.cos(cam.yaw);
+        const upX = -Math.sin(cam.pitch) * Math.cos(cam.yaw);
+        const upY = -Math.sin(cam.pitch) * Math.sin(cam.yaw);
+        const upZ = Math.cos(cam.pitch);
+
+        cam.target[0] += (-dx * rightX + dy * upX) * panScale;
+        cam.target[1] += (-dx * rightY + dy * upY) * panScale;
+        cam.target[2] += (dy * upZ) * panScale;
+      }
+      render3D();
+    });
+
+    window.addEventListener("mouseup", () => {
+      dragMode = null;
+    });
+
+    glCanvas.addEventListener("wheel", e => {
+      if (viewMode !== "3d") return;
+      e.preventDefault();
+      const factor = e.deltaY > 0 ? 1.12 : 0.89;
+      cam.distance = Math.max(8, Math.min(2500, cam.distance * factor));
+      render3D();
+    }, { passive: false });
+
+    // ==================== 2D & Unified Draw Pipeline ====================
+    function draw2D(pts, params, pitchDia, maxR, minOuterR) {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const w = rect.width;
+      const h = rect.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const cx = w / 2;
+      const cy = h / 2;
+      const scale = (Math.min(w, h) * 0.42) / maxR;
+
+      // Pitch circle
+      ctx.save();
+      ctx.strokeStyle = "rgba(148, 163, 184, 0.25)";
+      ctx.setLineDash([5, 5]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(cx, cy, (pitchDia / 2) * scale, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+
+      // Hub / boss circle preview
+      if (params.hasHub && params.hubDia > 0) {
+        ctx.save();
+        ctx.strokeStyle = "#f59e0b";
+        ctx.setLineDash([4, 3]);
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(cx, cy, (params.hubDia / 2) * scale, 0, TWO_PI);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Bolt holes & weight relief holes preview
+      const { boltCircles, reliefCircles } = getCutoutLayout(params, minOuterR);
+
+      for (const hc of boltCircles) {
+        ctx.strokeStyle = "#c084fc";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(cx + hc.cx * scale, cy - hc.cy * scale, hc.r * scale, 0, TWO_PI);
+        ctx.stroke();
+      }
+      for (const hc of reliefCircles) {
+        ctx.strokeStyle = "#fb923c";
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(cx + hc.cx * scale, cy - hc.cy * scale, hc.r * scale, 0, TWO_PI);
+        ctx.stroke();
+      }
+
+      // Sprocket outer contour
+      ctx.strokeStyle = "#4ade80";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      pts.forEach(([x, y], idx) => {
+        const px = cx + x * scale;
+        const py = cy - y * scale;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      // Shaft bore preview
+      if (params.holeDia > 0) {
+        ctx.strokeStyle = "#38bdf8";
+        ctx.lineWidth = 1.6;
+        if (params.boreType === "round") {
+          ctx.beginPath();
+          ctx.arc(cx, cy, (params.holeDia / 2) * scale, 0, TWO_PI);
+          ctx.stroke();
+        } else {
+          const borePts = generateBorePolygon(params, 96);
+          if (borePts.length > 0) {
+            ctx.beginPath();
+            borePts.forEach(([x, y], idx) => {
+              const px = cx + x * scale;
+              const py = cy - y * scale;
+              if (idx === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            });
+            ctx.closePath();
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Center crosshair
+      ctx.strokeStyle = "rgba(248, 250, 252, 0.35)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy);
+      ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8);
+      ctx.stroke();
+    }
+
+    function drawPreview() {
+      stepsValue.textContent = stepsInput.value;
+      const P0 = parseFloat(pitchInput.value);
+      const D0 = parseFloat(rollerInput.value);
+      const N0 = parseInt(teethInput.value, 10);
+      const steps0 = parseInt(stepsInput.value, 10);
+
+      if (P0 > 0 && D0 > 0 && N0 >= 5 && steps0 >= 1) {
+        const basePts = generateSprocketPoints(P0, D0, N0, steps0);
+        let minR0 = Infinity;
+        for (const [x, y] of basePts) minR0 = Math.min(minR0, Math.hypot(x, y));
+        syncDefaultRingDiameters(minR0);
+      }
+
+      syncFeatureUi();
+      const params = getParams();
+      const { P, D, N, steps, dxfName, stlName } = params;
+      filePreview.textContent = `${dxfName} / ${stlName}`;
+
+      if (!(P > 0 && D > 0 && N >= 5 && steps >= 1)) {
+        dimPreview.textContent = "Please enter valid parameters";
+        return;
+      }
+
+      const pts = generateSprocketPoints(P, D, N, steps);
+      const pitchDia = P / Math.sin(Math.PI / N);
+      dimPreview.textContent = `Pitch diameter: ${pitchDia.toFixed(2)} mm | Outline segments: ${pts.length}`;
+
+      let maxR = 1;
+      let minOuterR = Infinity;
+      for (const [x, y] of pts) {
+        const r = Math.hypot(x, y);
+        maxR = Math.max(maxR, r);
+        minOuterR = Math.min(minOuterR, r);
+      }
+
+      if (viewMode === "2d") {
+        draw2D(pts, params, pitchDia, maxR, minOuterR);
+      } else {
+        updateWebGLMesh(pts, params);
+        render3D();
+      }
+    }
+
+    function setViewMode(mode) {
+      viewMode = mode;
+      const is3D = mode === "3d";
+      mode2dBtn.classList.toggle("active", !is3D);
+      mode3dBtn.classList.toggle("active", is3D);
+      canvas.classList.toggle("hidden", is3D);
+      glCanvas.classList.toggle("hidden", !is3D);
+      tools3d.classList.toggle("hidden", !is3D);
+      controlsHint3d.classList.toggle("hidden", !is3D);
+      drawPreview();
+    }
+
+    mode2dBtn.addEventListener("click", () => setViewMode("2d"));
+    mode3dBtn.addEventListener("click", () => setViewMode("3d"));
+
+    toggleEdgesBtn.addEventListener("click", () => {
+      showEdges3D = !showEdges3D;
+      toggleEdgesBtn.classList.toggle("active-alt", showEdges3D);
+      render3D();
+    });
+
+    resetCamBtn.addEventListener("click", () => {
+      if (glState) {
+        resetCamera(glState.lastMaxR, glState.lastMaxZ);
+      } else {
+        cam.initialized = false;
+      }
+      drawPreview();
+    });
 
     function triggerDownload(blob, filename) {
       const url = URL.createObjectURL(blob);
