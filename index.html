@@ -218,6 +218,9 @@
       height: 100%;
       min-height: 500px;
     }
+    @media (max-width: 880px) {
+      .preview-wrap { min-height: 360px; }
+    }
     .canvas-box {
       flex: 1;
       background: #090d16;
@@ -228,6 +231,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      min-height: 320px;
     }
     canvas {
       width: 100%;
@@ -236,6 +240,9 @@
     }
     #glCanvas {
       cursor: grab;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
     }
     #glCanvas:active {
       cursor: grabbing;
@@ -291,9 +298,12 @@
       position: absolute;
       bottom: 10px;
       left: 12px;
-      font-size: 0.75rem;
+      right: 12px;
+      width: fit-content;
+      max-width: calc(100% - 24px);
+      font-size: 0.74rem;
       color: var(--muted);
-      background: rgba(15, 23, 42, 0.78);
+      background: rgba(15, 23, 42, 0.82);
       border: 1px solid rgba(51, 65, 85, 0.7);
       padding: 4px 9px;
       border-radius: 6px;
@@ -533,7 +543,7 @@
         <canvas id="glCanvas" class="hidden"></canvas>
 
         <div id="controlsHint3d" class="controls-hint hidden">
-          LMB: Rotate • RMB / Shift+LMB: Pan • Scroll: Zoom
+          Touch: 1 finger Rotate • 2 fingers Zoom &amp; Pan | Mouse: LMB Rotate • RMB Pan • Scroll Zoom
         </div>
       </div>
       <div class="meta">
@@ -1257,7 +1267,6 @@
       return tris;
     }
 
-    // Shared 3D mesh generator used by both Binary STL export and live WebGL 3D preview
     function generateSprocketMesh(pts, params) {
       let minOuterR = Infinity;
       let maxOuterR = 1;
@@ -1500,7 +1509,6 @@
         lastMaxZ: 8
       };
 
-      // Build print-bed grid at Z = 0
       const gridLines = [];
       const size = 120;
       const step = 10;
@@ -1547,7 +1555,6 @@
           normals[pIdx + 2] = n[2];
           pIdx += 3;
         }
-        // Triangle edges
         edges[eIdx++] = a[0]; edges[eIdx++] = a[1]; edges[eIdx++] = a[2];
         edges[eIdx++] = b[0]; edges[eIdx++] = b[1]; edges[eIdx++] = b[2];
         edges[eIdx++] = b[0]; edges[eIdx++] = b[1]; edges[eIdx++] = b[2];
@@ -1656,7 +1663,7 @@
       // 2. Draw solid sprocket mesh
       if (state.triVertCount > 0) {
         gl.uniform1i(state.uUseLighting, 1);
-        gl.uniform3f(state.uBaseColor, 0.22, 0.74, 0.97); // crisp metallic sky-blue CAD finish
+        gl.uniform3f(state.uBaseColor, 0.22, 0.74, 0.97);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, state.posBuf);
         gl.enableVertexAttribArray(state.aPos);
@@ -1684,7 +1691,20 @@
       }
     }
 
-    // Orbit / Pan / Zoom mouse & touch controls for 3D canvas
+    function applyCameraPan(dx, dy) {
+      const panScale = cam.distance * 0.0014;
+      const rightX = -Math.sin(cam.yaw);
+      const rightY = Math.cos(cam.yaw);
+      const upX = -Math.sin(cam.pitch) * Math.cos(cam.yaw);
+      const upY = -Math.sin(cam.pitch) * Math.sin(cam.yaw);
+      const upZ = Math.cos(cam.pitch);
+
+      cam.target[0] += (-dx * rightX + dy * upX) * panScale;
+      cam.target[1] += (-dx * rightY + dy * upY) * panScale;
+      cam.target[2] += (dy * upZ) * panScale;
+    }
+
+    // Orbit / Pan / Zoom mouse controls for 3D canvas
     let dragMode = null; // "orbit" | "pan"
     let lastMouseX = 0;
     let lastMouseY = 0;
@@ -1712,16 +1732,7 @@
         cam.yaw -= dx * 0.008;
         cam.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, cam.pitch + dy * 0.008));
       } else if (dragMode === "pan") {
-        const panScale = cam.distance * 0.0014;
-        const rightX = -Math.sin(cam.yaw);
-        const rightY = Math.cos(cam.yaw);
-        const upX = -Math.sin(cam.pitch) * Math.cos(cam.yaw);
-        const upY = -Math.sin(cam.pitch) * Math.sin(cam.yaw);
-        const upZ = Math.cos(cam.pitch);
-
-        cam.target[0] += (-dx * rightX + dy * upX) * panScale;
-        cam.target[1] += (-dx * rightY + dy * upY) * panScale;
-        cam.target[2] += (dy * upZ) * panScale;
+        applyCameraPan(dx, dy);
       }
       render3D();
     });
@@ -1737,6 +1748,95 @@
       cam.distance = Math.max(8, Math.min(2500, cam.distance * factor));
       render3D();
     }, { passive: false });
+
+    // Mobile & tablet touch gestures: 1 finger orbit, 2 fingers pinch-zoom + pan
+    let touchState = null;
+
+    function getTouchMetrics(touches) {
+      const t0 = touches[0];
+      const t1 = touches[1];
+      const cx = (t0.clientX + t1.clientX) * 0.5;
+      const cy = (t0.clientY + t1.clientY) * 0.5;
+      const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+      return { cx, cy, dist };
+    }
+
+    glCanvas.addEventListener("touchstart", e => {
+      if (viewMode !== "3d") return;
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        touchState = {
+          mode: "orbit",
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+      } else if (e.touches.length >= 2) {
+        const m = getTouchMetrics(e.touches);
+        touchState = {
+          mode: "pinch",
+          cx: m.cx,
+          cy: m.cy,
+          dist: Math.max(10, m.dist)
+        };
+      }
+    }, { passive: false });
+
+    glCanvas.addEventListener("touchmove", e => {
+      if (viewMode !== "3d" || !touchState) return;
+      e.preventDefault();
+
+      if (e.touches.length === 1 && touchState.mode === "orbit") {
+        const x = e.touches[0].clientX;
+        const y = e.touches[0].clientY;
+        const dx = x - touchState.x;
+        const dy = y - touchState.y;
+        touchState.x = x;
+        touchState.y = y;
+
+        cam.yaw -= dx * 0.009;
+        cam.pitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, cam.pitch + dy * 0.009));
+        render3D();
+      } else if (e.touches.length >= 2) {
+        const m = getTouchMetrics(e.touches);
+        if (touchState.mode !== "pinch") {
+          touchState = {
+            mode: "pinch",
+            cx: m.cx,
+            cy: m.cy,
+            dist: Math.max(10, m.dist)
+          };
+          return;
+        }
+        const safeDist = Math.max(10, m.dist);
+        const scale = touchState.dist / safeDist;
+        cam.distance = Math.max(8, Math.min(2500, cam.distance * scale));
+
+        const dx = m.cx - touchState.cx;
+        const dy = m.cy - touchState.cy;
+        applyCameraPan(dx, dy);
+
+        touchState.cx = m.cx;
+        touchState.cy = m.cy;
+        touchState.dist = safeDist;
+        render3D();
+      }
+    }, { passive: false });
+
+    glCanvas.addEventListener("touchend", e => {
+      if (e.touches.length === 1) {
+        touchState = {
+          mode: "orbit",
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY
+        };
+      } else if (e.touches.length === 0) {
+        touchState = null;
+      }
+    });
+
+    glCanvas.addEventListener("touchcancel", () => {
+      touchState = null;
+    });
 
     // ==================== 2D & Unified Draw Pipeline ====================
     function draw2D(pts, params, pitchDia, maxR, minOuterR) {
