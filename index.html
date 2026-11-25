@@ -34,17 +34,48 @@
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
       background: #111827;
+    }
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
     header h1 {
       margin: 0;
       font-size: 1.1rem;
       font-weight: 700;
     }
-    header span {
+    header .subtitle {
       color: var(--muted);
       font-size: 0.85rem;
+    }
+    .lang-switch {
+      display: inline-flex;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .lang-btn:hover {
+      color: var(--text);
+    }
+    .lang-btn.active {
+      background: var(--secondary);
+      color: #082f49;
     }
     main {
       display: grid;
@@ -330,55 +361,61 @@
 </head>
 <body>
   <header>
-    <h1>Sprocket Generator — DXF &amp; STL</h1>
-    <span>Live 2D &amp; 3D Preview • Shaft Bore &amp; Boss • Bolt &amp; Weight Relief Holes • Watertight STL</span>
+    <div class="header-left">
+      <h1 data-i18n="appTitle">Sprocket Generator — DXF &amp; STL</h1>
+      <span class="subtitle" data-i18n="appSubtitle">Live 2D &amp; 3D Preview • Shaft Bore &amp; Boss • Bolt &amp; Weight Relief Holes • Watertight STL</span>
+    </div>
+    <div class="lang-switch" aria-label="Language">
+      <button type="button" id="langPlBtn" class="lang-btn">PL</button>
+      <button type="button" id="langEnBtn" class="lang-btn">EN</button>
+    </div>
   </header>
 
   <main>
     <aside class="card">
-      <h2 class="section-title">1. Chain Parameters</h2>
+      <h2 class="section-title" data-i18n="secChain">1. Chain Parameters</h2>
       <div class="group">
-        <label for="chainSelect">Chain Standard</label>
+        <label for="chainSelect" data-i18n="lblChainStandard">Chain Standard</label>
         <select id="chainSelect"></select>
       </div>
       <div class="two-col">
         <div class="group">
-          <label for="pitchInput">Pitch (P) [mm]</label>
+          <label for="pitchInput" data-i18n="lblPitch">Pitch (P) [mm]</label>
           <input type="number" id="pitchInput" step="0.001" min="0.1" />
         </div>
         <div class="group">
-          <label for="rollerInput">Roller (D) [mm]</label>
+          <label for="rollerInput" data-i18n="lblRoller">Roller (D) [mm]</label>
           <input type="number" id="rollerInput" step="0.001" min="0.1" />
         </div>
       </div>
 
-      <h2 class="section-title" style="margin-top:14px;">2. Sprocket Geometry</h2>
+      <h2 class="section-title" style="margin-top:14px;" data-i18n="secGeom">2. Sprocket Geometry</h2>
       <div class="two-col">
         <div class="group">
-          <label for="teethInput">Teeth (Z)</label>
+          <label for="teethInput" data-i18n="lblTeeth">Teeth (Z)</label>
           <input type="number" id="teethInput" min="5" max="500" step="1" value="26" />
         </div>
         <div class="group">
-          <label for="holeInput">Shaft Bore [mm]</label>
+          <label for="holeInput" data-i18n="lblShaftBore">Shaft Bore [mm]</label>
           <input type="number" id="holeInput" min="0" max="500" step="0.5" value="20" />
         </div>
       </div>
       <div class="group">
         <div class="label-row">
-          <label for="thicknessInput">Rim Thickness (3D STL) [mm]</label>
-          <button type="button" id="resetThicknessBtn" class="reset-hint" title="Reset to standard thickness">Default: 7.2 mm</button>
+          <label for="thicknessInput" data-i18n="lblThickness">Rim Thickness (3D STL) [mm]</label>
+          <button type="button" id="resetThicknessBtn" class="reset-hint">Default: 7.2 mm</button>
         </div>
         <input type="number" id="thicknessInput" min="0.2" max="500" step="0.1" value="7.2" />
       </div>
 
-      <h2 class="section-title" style="margin-top:14px;">3. Bore, Shaft Boss &amp; Fasteners</h2>
+      <h2 class="section-title" style="margin-top:14px;" data-i18n="secFeatures">3. Bore, Shaft Boss &amp; Fasteners</h2>
       <div class="tile-grid">
         <button type="button" id="boreTileBtn" class="tile-btn active">
           <svg viewBox="0 0 32 32">
             <circle cx="16" cy="17" r="9" />
             <path d="M13 8.5 V5 H19 V8.5" />
           </svg>
-          <span class="tile-title">Shaft Bore</span>
+          <span class="tile-title" data-i18n="tileBore">Shaft Bore</span>
           <span class="tile-sub" id="boreTileSub">round</span>
         </button>
 
@@ -387,7 +424,7 @@
             <circle cx="16" cy="16" r="11" stroke-dasharray="3 2" />
             <circle cx="16" cy="16" r="6" />
           </svg>
-          <span class="tile-title">Shaft Boss</span>
+          <span class="tile-title" data-i18n="tileHub">Shaft Boss</span>
           <span class="tile-sub" id="hubTileSub">none</span>
         </button>
 
@@ -401,7 +438,7 @@
             <circle cx="7.4" cy="21" r="2.2" />
             <circle cx="7.4" cy="11" r="2.2" />
           </svg>
-          <span class="tile-title">Bolt Holes</span>
+          <span class="tile-title" data-i18n="tileBolts">Bolt Holes</span>
           <span class="tile-sub" id="boltsTileSub">none</span>
         </button>
 
@@ -412,7 +449,7 @@
             <circle cx="22.5" cy="19.5" r="3" />
             <circle cx="9.5" cy="19.5" r="3" />
           </svg>
-          <span class="tile-title">Weight Relief</span>
+          <span class="tile-title" data-i18n="tileRelief">Weight Relief</span>
           <span class="tile-sub" id="reliefTileSub">none</span>
         </button>
       </div>
@@ -420,25 +457,25 @@
       <!-- 1. Bore Sub-panel -->
       <div id="borePanel" class="sub-panel">
         <div class="group" style="margin-bottom:8px;">
-          <label for="boreTypeSelect">Shaft Bore Profile</label>
+          <label for="boreTypeSelect" data-i18n="lblBoreProfile">Shaft Bore Profile</label>
           <select id="boreTypeSelect">
-            <option value="round">Round (Circle)</option>
-            <option value="keyway">Keyway (DIN / Rectangular)</option>
-            <option value="dshaft">D-Shaft (Flat Cut)</option>
+            <option value="round" data-i18n="optBoreRound">Round (Circle)</option>
+            <option value="keyway" data-i18n="optBoreKeyway">Keyway (DIN / Rectangular)</option>
+            <option value="dshaft" data-i18n="optBoreDshaft">D-Shaft (Flat Cut)</option>
           </select>
         </div>
         <div id="keywayFields" class="two-col hidden">
           <div class="group" style="margin-bottom:0;">
-            <label for="keyWidthInput">Key Width [mm]</label>
+            <label for="keyWidthInput" data-i18n="lblKeyWidth">Key Width [mm]</label>
             <input type="number" id="keyWidthInput" min="0.5" max="100" step="0.1" value="6" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="keyDepthInput">Key Depth [mm]</label>
+            <label for="keyDepthInput" data-i18n="lblKeyDepth">Key Depth [mm]</label>
             <input type="number" id="keyDepthInput" min="0.2" max="50" step="0.1" value="2.8" />
           </div>
         </div>
         <div id="dshaftFields" class="group hidden" style="margin-bottom:0;">
-          <label for="dFlatInput">Flat Cut Depth [mm]</label>
+          <label for="dFlatInput" data-i18n="lblDFlat">Flat Cut Depth [mm]</label>
           <input type="number" id="dFlatInput" min="0.2" max="100" step="0.1" value="2.0" />
         </div>
       </div>
@@ -446,19 +483,19 @@
       <!-- 2. Hub (Shaft Boss) Sub-panel -->
       <div id="hubPanel" class="sub-panel hidden">
         <div class="group" style="margin-bottom:8px;">
-          <label for="hubEnabledSelect">Shaft Boss (Hub Collar)</label>
+          <label for="hubEnabledSelect" data-i18n="lblHubBoss">Shaft Boss (Hub Collar)</label>
           <select id="hubEnabledSelect">
-            <option value="none">None (Flat Rim Only)</option>
-            <option value="hub">Cylindrical Boss (3D STL &amp; DXF)</option>
+            <option value="none" data-i18n="optHubNone">None (Flat Rim Only)</option>
+            <option value="hub" data-i18n="optHubEnabled">Cylindrical Boss (3D STL &amp; DXF)</option>
           </select>
         </div>
         <div id="hubFields" class="two-col hidden">
           <div class="group" style="margin-bottom:0;">
-            <label for="hubDiaInput">Boss Dia [mm]</label>
+            <label for="hubDiaInput" data-i18n="lblHubDia">Boss Dia [mm]</label>
             <input type="number" id="hubDiaInput" min="1" max="500" step="0.5" value="36" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="hubHeightInput">Boss Height [mm]</label>
+            <label for="hubHeightInput" data-i18n="lblHubHeight">Boss Height [mm]</label>
             <input type="number" id="hubHeightInput" min="0.5" max="500" step="0.5" value="16" />
           </div>
         </div>
@@ -467,23 +504,23 @@
       <!-- 3. Bolt Holes Sub-panel -->
       <div id="boltsPanel" class="sub-panel hidden">
         <div class="group" style="margin-bottom:8px;">
-          <label for="boltsEnabledSelect">Bolt Circle Holes</label>
+          <label for="boltsEnabledSelect" data-i18n="lblBolts">Bolt Circle Holes</label>
           <select id="boltsEnabledSelect">
-            <option value="none">None</option>
-            <option value="bolts">Bolt Circle Pattern</option>
+            <option value="none" data-i18n="optNone">None</option>
+            <option value="bolts" data-i18n="optBoltsEnabled">Bolt Circle Pattern</option>
           </select>
         </div>
         <div id="boltsFields" class="three-col hidden">
           <div class="group" style="margin-bottom:0;">
-            <label for="boltCountInput">Count</label>
+            <label for="boltCountInput" data-i18n="lblCount">Count</label>
             <input type="number" id="boltCountInput" min="1" max="60" step="1" value="6" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="boltDiaInput">Hole Ø [mm]</label>
+            <label for="boltDiaInput" data-i18n="lblHoleDia">Hole Ø [mm]</label>
             <input type="number" id="boltDiaInput" min="0.5" max="200" step="0.5" value="5" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="boltPcdInput">PCD Ø [mm]</label>
+            <label for="boltPcdInput" data-i18n="lblPcdDia">PCD Ø [mm]</label>
             <input type="number" id="boltPcdInput" min="1" max="1000" step="0.5" value="44" />
           </div>
         </div>
@@ -492,23 +529,23 @@
       <!-- 4. Weight Relief Holes Sub-panel -->
       <div id="reliefPanel" class="sub-panel hidden">
         <div class="group" style="margin-bottom:8px;">
-          <label for="reliefEnabledSelect">Weight Relief Holes</label>
+          <label for="reliefEnabledSelect" data-i18n="lblRelief">Weight Relief Holes</label>
           <select id="reliefEnabledSelect">
-            <option value="none">None</option>
-            <option value="relief">Circular Relief Cutouts</option>
+            <option value="none" data-i18n="optNone">None</option>
+            <option value="relief" data-i18n="optReliefEnabled">Circular Relief Cutouts</option>
           </select>
         </div>
         <div id="reliefFields" class="three-col hidden">
           <div class="group" style="margin-bottom:0;">
-            <label for="reliefCountInput">Count</label>
+            <label for="reliefCountInput" data-i18n="lblCount">Count</label>
             <input type="number" id="reliefCountInput" min="1" max="60" step="1" value="6" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="reliefDiaInput">Hole Ø [mm]</label>
+            <label for="reliefDiaInput" data-i18n="lblHoleDia">Hole Ø [mm]</label>
             <input type="number" id="reliefDiaInput" min="1" max="300" step="0.5" value="14" />
           </div>
           <div class="group" style="margin-bottom:0;">
-            <label for="reliefPcdInput">Ring Ø [mm]</label>
+            <label for="reliefPcdInput" data-i18n="lblRingDia">Ring Ø [mm]</label>
             <input type="number" id="reliefPcdInput" min="2" max="1000" step="0.5" value="64" />
           </div>
         </div>
@@ -516,44 +553,187 @@
 
       <div class="group">
         <div class="range-row">
-          <label for="stepsInput" style="margin:0;">Arc Smoothness (segments)</label>
+          <label for="stepsInput" style="margin:0;" data-i18n="lblSmoothness">Arc Smoothness (segments)</label>
           <span id="stepsValue">15</span>
         </div>
         <input type="range" id="stepsInput" min="5" max="60" step="1" value="15" />
       </div>
 
-      <button id="downloadDxfBtn" class="btn-dxf" type="button">DOWNLOAD DXF FILE</button>
-      <button id="downloadStlBtn" class="btn-stl" type="button">DOWNLOAD STL FILE (3D)</button>
+      <button id="downloadDxfBtn" class="btn-dxf" type="button" data-i18n="btnDownloadDxf">DOWNLOAD DXF FILE</button>
+      <button id="downloadStlBtn" class="btn-stl" type="button" data-i18n="btnDownloadStl">DOWNLOAD STL FILE (3D)</button>
     </aside>
 
     <section class="card preview-wrap">
       <div class="canvas-box">
         <div class="viewport-bar">
           <div class="mode-switch">
-            <button type="button" id="mode2dBtn" class="vp-btn active">2D CAD</button>
-            <button type="button" id="mode3dBtn" class="vp-btn">3D STL</button>
+            <button type="button" id="mode2dBtn" class="vp-btn active" data-i18n="btnMode2d">2D CAD</button>
+            <button type="button" id="mode3dBtn" class="vp-btn" data-i18n="btnMode3d">3D STL</button>
           </div>
           <div id="tools3d" class="view-tools hidden">
-            <button type="button" id="toggleEdgesBtn" class="vp-btn">Edges</button>
-            <button type="button" id="resetCamBtn" class="vp-btn">Reset View</button>
+            <button type="button" id="toggleEdgesBtn" class="vp-btn" data-i18n="btnEdges">Edges</button>
+            <button type="button" id="resetCamBtn" class="vp-btn" data-i18n="btnResetView">Reset View</button>
           </div>
         </div>
 
         <canvas id="previewCanvas"></canvas>
         <canvas id="glCanvas" class="hidden"></canvas>
 
-        <div id="controlsHint3d" class="controls-hint hidden">
+        <div id="controlsHint3d" class="controls-hint hidden" data-i18n="controlsHint3d">
           Touch: 1 finger Rotate • 2 fingers Zoom &amp; Pan | Mouse: LMB Rotate • RMB Pan • Scroll Zoom
         </div>
       </div>
       <div class="meta">
-        <div>Files: <code id="filePreview">-</code></div>
-        <div id="dimPreview">Pitch diameter: -</div>
+        <div><span data-i18n="lblFiles">Files:</span> <code id="filePreview">-</code></div>
+        <div id="dimPreview">-</div>
       </div>
     </section>
   </main>
 
   <script>
+    // ==================== Localization (PL / EN) ====================
+    const I18N = {
+      pl: {
+        pageTitle: "Generator Kół Łańcuchowych — DXF i STL",
+        appTitle: "Generator Kół Łańcuchowych — DXF i STL",
+        appSubtitle: "Podgląd 2D i 3D na żywo • Otwór wału i piasta • Śruby i otwory odciążające • Szczelny STL",
+        secChain: "1. Parametry łańcucha",
+        lblChainStandard: "Standard łańcucha",
+        lblPitch: "Podziałka (P) [mm]",
+        lblRoller: "Średnica rolki (D) [mm]",
+        secGeom: "2. Geometria koła",
+        lblTeeth: "Liczba zębów (Z)",
+        lblShaftBore: "Otwór wału [mm]",
+        lblThickness: "Grubość wieńca (3D STL) [mm]",
+        resetThicknessTitle: "Przywróć domyślną grubość",
+        defaultThicknessFmt: (val) => `Domyślnie: ${val} mm`,
+        secFeatures: "3. Otwór wału, piasta i mocowanie",
+        tileBore: "Otwór wału",
+        tileHub: "Piasta wału",
+        tileBolts: "Otwory montażowe",
+        tileRelief: "Odciążenie",
+        subNone: "brak",
+        subRound: "okrągły",
+        subKeyway: "wpust",
+        subDshaft: "wałek D",
+        lblBoreProfile: "Profil otworu na wał",
+        optBoreRound: "Okrągły (walcowy)",
+        optBoreKeyway: "Z rowkiem wpustowym (DIN)",
+        optBoreDshaft: "Wałek ścięty (D-Shaft)",
+        lblKeyWidth: "Szerokość wpustu [mm]",
+        lblKeyDepth: "Głębokość rowka [mm]",
+        lblDFlat: "Głębokość ścięcia [mm]",
+        lblHubBoss: "Piasta wału (kołnierz)",
+        optHubNone: "Brak (tylko płaski wieniec)",
+        optHubEnabled: "Piasta walcowa (3D STL i DXF)",
+        lblHubDia: "Śr. piasty [mm]",
+        lblHubHeight: "Wys. piasty [mm]",
+        lblBolts: "Otwory montażowe na okręgu",
+        optNone: "Brak",
+        optBoltsEnabled: "śr. podziałowa otworów",
+        lblCount: "Ilość",
+        lblHoleDia: "Śr. otworu [mm]",
+        lblPcdDia: "Śr. podziałowa [mm]",
+        lblRelief: "Otwory odciążające (ulga)",
+        optReliefEnabled: "Okrągłe otwory odciążające",
+        lblRingDia: "Śr. rozmieszczenia [mm]",
+        lblSmoothness: "Gładkość łuków (segmenty)",
+        btnDownloadDxf: "POBIERZ PLIK DXF",
+        btnDownloadStl: "POBIERZ PLIK STL (3D)",
+        btnMode2d: "2D CAD",
+        btnMode3d: "3D STL",
+        btnEdges: "Krawędzie",
+        btnResetView: "Resetuj widok",
+        controlsHint3d: "Dotyk: 1 palec Obrót • 2 palce Zoom i Przesuwanie | Mysz: LPM Obrót • PPM Przesuń • Rolka Zoom",
+        lblFiles: "Pliki:",
+        invalidParams: "Wprowadź poprawne parametry (podziałka > 0, rolka > 0, zęby ≥ 5)",
+        dimPreviewFmt: (pd, segs) => `Średnica podziałowa: ${pd} mm | Segmenty obrysu: ${segs}`,
+        alertInvalidDxf: "Sprawdź parametry wejściowe (podziałka > 0, rolka > 0, liczba zębów >= 5).",
+        alertInvalidStl: "Sprawdź parametry wejściowe (podziałka > 0, rolka > 0, liczba zębów >= 5, grubość > 0).",
+        chainCustom: "WŁASNY (CUSTOM)"
+      },
+      en: {
+        pageTitle: "Sprocket Generator — Web DXF & STL",
+        appTitle: "Sprocket Generator — DXF & STL",
+        appSubtitle: "Live 2D & 3D Preview • Shaft Bore & Boss • Bolt & Weight Relief Holes • Watertight STL",
+        secChain: "1. Chain Parameters",
+        lblChainStandard: "Chain Standard",
+        lblPitch: "Pitch (P) [mm]",
+        lblRoller: "Roller (D) [mm]",
+        secGeom: "2. Sprocket Geometry",
+        lblTeeth: "Teeth (Z)",
+        lblShaftBore: "Shaft Bore [mm]",
+        lblThickness: "Rim Thickness (3D STL) [mm]",
+        resetThicknessTitle: "Reset to standard thickness",
+        defaultThicknessFmt: (val) => `Default: ${val} mm`,
+        secFeatures: "3. Bore, Shaft Boss & Fasteners",
+        tileBore: "Shaft Bore",
+        tileHub: "Shaft Boss",
+        tileBolts: "Bolt Holes",
+        tileRelief: "Weight Relief",
+        subNone: "none",
+        subRound: "round",
+        subKeyway: "keyway",
+        subDshaft: "D-shaft",
+        lblBoreProfile: "Shaft Bore Profile",
+        optBoreRound: "Round (Circle)",
+        optBoreKeyway: "Keyway (DIN / Rectangular)",
+        optBoreDshaft: "D-Shaft (Flat Cut)",
+        lblKeyWidth: "Key Width [mm]",
+        lblKeyDepth: "Key Depth [mm]",
+        lblDFlat: "Flat Cut Depth [mm]",
+        lblHubBoss: "Shaft Boss (Hub Collar)",
+        optHubNone: "None (Flat Rim Only)",
+        optHubEnabled: "Cylindrical Boss (3D STL & DXF)",
+        lblHubDia: "Boss Dia [mm]",
+        lblHubHeight: "Boss Height [mm]",
+        lblBolts: "Bolt Circle Holes",
+        optNone: "None",
+        optBoltsEnabled: "Bolt Circle Pattern",
+        lblCount: "Count",
+        lblHoleDia: "Hole Ø [mm]",
+        lblPcdDia: "PCD Ø [mm]",
+        lblRelief: "Weight Relief Holes",
+        optReliefEnabled: "Circular Relief Cutouts",
+        lblRingDia: "Ring Ø [mm]",
+        lblSmoothness: "Arc Smoothness (segments)",
+        btnDownloadDxf: "DOWNLOAD DXF FILE",
+        btnDownloadStl: "DOWNLOAD STL FILE (3D)",
+        btnMode2d: "2D CAD",
+        btnMode3d: "3D STL",
+        btnEdges: "Edges",
+        btnResetView: "Reset View",
+        controlsHint3d: "Touch: 1 finger Rotate • 2 fingers Zoom & Pan | Mouse: LMB Rotate • RMB Pan • Scroll Zoom",
+        lblFiles: "Files:",
+        invalidParams: "Please enter valid parameters (pitch > 0, roller > 0, teeth ≥ 5)",
+        dimPreviewFmt: (pd, segs) => `Pitch diameter: ${pd} mm | Outline segments: ${segs}`,
+        alertInvalidDxf: "Please check input parameters (pitch > 0, roller > 0, teeth >= 5).",
+        alertInvalidStl: "Please check input parameters (pitch > 0, roller > 0, teeth >= 5, thickness > 0).",
+        chainCustom: "CUSTOM"
+      }
+    };
+
+    function detectInitialLang() {
+      try {
+        const saved = localStorage.getItem("sprocket_gen_lang");
+        if (saved === "pl" || saved === "en") return saved;
+      } catch (_) {}
+      const langs = Array.isArray(navigator.languages) && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || navigator.userLanguage || "en"];
+      for (const l of langs) {
+        if (typeof l === "string" && l.toLowerCase().startsWith("pl")) {
+          return "pl";
+        }
+      }
+      return "en";
+    }
+
+    let currentLang = detectInitialLang();
+    function t(key) {
+      return (I18N[currentLang] && I18N[currentLang][key]) || I18N.en[key] || key;
+    }
+
     const CHAIN_DATA = {
       "#219 (Karting)": { pitch: 7.77, roller: 4.78, thickness: 4.5 },
       "#25 (Karting / ANSI 25)": { pitch: 6.35, roller: 3.30, thickness: 2.8 },
@@ -578,6 +758,8 @@
     };
 
     const TWO_PI = Math.PI * 2;
+    const langPlBtn = document.getElementById("langPlBtn");
+    const langEnBtn = document.getElementById("langEnBtn");
     const chainSelect = document.getElementById("chainSelect");
     const pitchInput = document.getElementById("pitchInput");
     const rollerInput = document.getElementById("rollerInput");
@@ -654,10 +836,43 @@
     for (const name of Object.keys(CHAIN_DATA)) {
       const opt = document.createElement("option");
       opt.value = name;
-      opt.textContent = name;
+      opt.textContent = name === "CUSTOM" ? t("chainCustom") : name;
       chainSelect.appendChild(opt);
     }
     chainSelect.value = '08B-1 (1/2")';
+
+    function applyTranslations() {
+      document.documentElement.lang = currentLang;
+      document.title = t("pageTitle");
+      langPlBtn.classList.toggle("active", currentLang === "pl");
+      langEnBtn.classList.toggle("active", currentLang === "en");
+
+      document.querySelectorAll("[data-i18n]").forEach(el => {
+        const key = el.getAttribute("data-i18n");
+        if (key && typeof I18N[currentLang][key] === "string") {
+          el.textContent = I18N[currentLang][key];
+        }
+      });
+
+      resetThicknessBtn.title = t("resetThicknessTitle");
+      const customOpt = chainSelect.querySelector('option[value="CUSTOM"]');
+      if (customOpt) customOpt.textContent = t("chainCustom");
+
+      updateThicknessHint();
+    }
+
+    function setLanguage(lang) {
+      if (lang !== "pl" && lang !== "en") return;
+      currentLang = lang;
+      try {
+        localStorage.setItem("sprocket_gen_lang", lang);
+      } catch (_) {}
+      applyTranslations();
+      drawPreview();
+    }
+
+    langPlBtn.addEventListener("click", () => setLanguage("pl"));
+    langEnBtn.addEventListener("click", () => setLanguage("en"));
 
     function getDefaultThickness() {
       const info = CHAIN_DATA[chainSelect.value];
@@ -665,7 +880,7 @@
     }
 
     function updateThicknessHint() {
-      resetThicknessBtn.textContent = `Default: ${getDefaultThickness()} mm`;
+      resetThicknessBtn.textContent = I18N[currentLang].defaultThicknessFmt(getDefaultThickness());
     }
 
     function mod2Pi(a) {
@@ -943,19 +1158,21 @@
       const boreType = boreTypeSelect.value;
       keywayFields.classList.toggle("hidden", boreType !== "keyway");
       dshaftFields.classList.toggle("hidden", boreType !== "dshaft");
-      boreTileSub.textContent = boreType === "round" ? "round" : (boreType === "keyway" ? "keyway" : "D-shaft");
+      boreTileSub.textContent = boreType === "round"
+        ? t("subRound")
+        : (boreType === "keyway" ? t("subKeyway") : t("subDshaft"));
 
       const hasHub = hubEnabledSelect.value === "hub";
       hubFields.classList.toggle("hidden", !hasHub);
-      hubTileSub.textContent = hasHub ? `Ø${hubDiaInput.value}` : "none";
+      hubTileSub.textContent = hasHub ? `Ø${hubDiaInput.value}` : t("subNone");
 
       const hasBolts = boltsEnabledSelect.value === "bolts";
       boltsFields.classList.toggle("hidden", !hasBolts);
-      boltsTileSub.textContent = hasBolts ? `${boltCountInput.value}×Ø${boltDiaInput.value}` : "none";
+      boltsTileSub.textContent = hasBolts ? `${boltCountInput.value}×Ø${boltDiaInput.value}` : t("subNone");
 
       const hasRelief = reliefEnabledSelect.value === "relief";
       reliefFields.classList.toggle("hidden", !hasRelief);
-      reliefTileSub.textContent = hasRelief ? `${reliefCountInput.value}×Ø${reliefDiaInput.value}` : "none";
+      reliefTileSub.textContent = hasRelief ? `${reliefCountInput.value}×Ø${reliefDiaInput.value}` : t("subNone");
     }
 
     function syncChainFields() {
@@ -1415,7 +1632,7 @@
       cam.yaw = 0.58;
       cam.pitch = 0.74;
       cam.target = [0, 0, maxZ * 0.45];
-      cam.distance = Math.max(30, maxR * 2.55);
+      cam.distance = Math.max(30, maxR * 2.75);
       cam.initialized = true;
     }
 
@@ -1960,13 +2177,13 @@
       filePreview.textContent = `${dxfName} / ${stlName}`;
 
       if (!(P > 0 && D > 0 && N >= 5 && steps >= 1)) {
-        dimPreview.textContent = "Please enter valid parameters";
+        dimPreview.textContent = t("invalidParams");
         return;
       }
 
       const pts = generateSprocketPoints(P, D, N, steps);
       const pitchDia = P / Math.sin(Math.PI / N);
-      dimPreview.textContent = `Pitch diameter: ${pitchDia.toFixed(2)} mm | Outline segments: ${pts.length}`;
+      dimPreview.textContent = I18N[currentLang].dimPreviewFmt(pitchDia.toFixed(2), pts.length);
 
       let maxR = 1;
       let minOuterR = Infinity;
@@ -2050,7 +2267,7 @@
     downloadDxfBtn.addEventListener("click", () => {
       const params = getParams();
       if (!(params.P > 0 && params.D > 0 && params.N >= 5 && params.steps >= 1)) {
-        alert("Please check input parameters (pitch > 0, roller > 0, teeth >= 5).");
+        alert(t("alertInvalidDxf"));
         return;
       }
       const pts = generateSprocketPoints(params.P, params.D, params.N, params.steps);
@@ -2061,7 +2278,7 @@
     downloadStlBtn.addEventListener("click", () => {
       const params = getParams();
       if (!(params.P > 0 && params.D > 0 && params.N >= 5 && params.thickness > 0 && params.steps >= 1)) {
-        alert("Please check input parameters (pitch > 0, roller > 0, teeth >= 5, thickness > 0).");
+        alert(t("alertInvalidStl"));
         return;
       }
       const pts = generateSprocketPoints(params.P, params.D, params.N, params.steps);
@@ -2087,6 +2304,7 @@
     });
     window.addEventListener("resize", drawPreview);
 
+    applyTranslations();
     syncChainFields();
     drawPreview();
   </script>
