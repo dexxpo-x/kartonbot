@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+a<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -393,19 +393,25 @@
       <div class="two-col">
         <div class="group">
           <label for="teethInput" data-i18n="lblTeeth">Teeth (Z)</label>
-          <input type="number" id="teethInput" min="5" max="500" step="1" value="26" />
+          <input type="number" id="teethInput" min="5" max="180" step="1" value="26" />
         </div>
         <div class="group">
           <label for="holeInput" data-i18n="lblShaftBore">Shaft Bore [mm]</label>
-          <input type="number" id="holeInput" min="0" max="500" step="0.5" value="20" />
+          <input type="number" id="holeInput" min="0" max="200" step="0.1" value="8" />
         </div>
       </div>
-      <div class="group">
-        <div class="label-row">
-          <label for="thicknessInput" data-i18n="lblThickness">Rim Thickness (3D STL) [mm]</label>
-          <button type="button" id="resetThicknessBtn" class="reset-hint">Default: 7.2 mm</button>
+      <div class="two-col">
+        <div class="group">
+          <div class="label-row">
+            <label for="thicknessInput" data-i18n="lblThickness">Rim Thickness [mm]</label>
+            <button type="button" id="resetThicknessBtn" class="reset-hint">Default: 7.2 mm</button>
+          </div>
+          <input type="number" id="thicknessInput" min="0.2" max="60" step="0.1" value="7.2" />
         </div>
-        <input type="number" id="thicknessInput" min="0.2" max="500" step="0.1" value="7.2" />
+        <div class="group">
+          <label for="chamferInput" data-i18n="lblChamfer">Tooth Chamfer 45° [mm]</label>
+          <input type="number" id="chamferInput" min="0" max="3.0" step="0.1" value="0.6" />
+        </div>
       </div>
 
       <h2 class="section-title" style="margin-top:14px;" data-i18n="secFeatures">3. Bore, Shaft Boss &amp; Fasteners</h2>
@@ -456,27 +462,33 @@
 
       <!-- 1. Bore Sub-panel -->
       <div id="borePanel" class="sub-panel">
-        <div class="group" style="margin-bottom:8px;">
-          <label for="boreTypeSelect" data-i18n="lblBoreProfile">Shaft Bore Profile</label>
-          <select id="boreTypeSelect">
-            <option value="round" data-i18n="optBoreRound">Round (Circle)</option>
-            <option value="keyway" data-i18n="optBoreKeyway">Keyway (DIN / Rectangular)</option>
-            <option value="dshaft" data-i18n="optBoreDshaft">D-Shaft (Flat Cut)</option>
-          </select>
+        <div class="two-col" style="margin-bottom:8px;">
+          <div class="group" style="margin-bottom:0;">
+            <label for="boreTypeSelect" data-i18n="lblBoreProfile">Shaft Bore Profile</label>
+            <select id="boreTypeSelect">
+              <option value="round" data-i18n="optBoreRound">Round (Circle)</option>
+              <option value="keyway" data-i18n="optBoreKeyway">Keyway (DIN / Rectangular)</option>
+              <option value="dshaft" data-i18n="optBoreDshaft">D-Shaft (Flat Cut)</option>
+            </select>
+          </div>
+          <div class="group" style="margin-bottom:0;">
+            <label for="boreChamferInput" data-i18n="lblBoreChamfer">Bore Chamfer 45° [mm]</label>
+            <input type="number" id="boreChamferInput" min="0" max="5.0" step="0.1" value="0.4" />
+          </div>
         </div>
         <div id="keywayFields" class="two-col hidden">
           <div class="group" style="margin-bottom:0;">
             <label for="keyWidthInput" data-i18n="lblKeyWidth">Key Width [mm]</label>
-            <input type="number" id="keyWidthInput" min="0.5" max="100" step="0.1" value="6" />
+            <input type="number" id="keyWidthInput" min="1" max="40" step="0.1" value="3.0" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="keyDepthInput" data-i18n="lblKeyDepth">Key Depth [mm]</label>
-            <input type="number" id="keyDepthInput" min="0.2" max="50" step="0.1" value="2.8" />
+            <input type="number" id="keyDepthInput" min="0.3" max="20" step="0.1" value="1.4" />
           </div>
         </div>
         <div id="dshaftFields" class="group hidden" style="margin-bottom:0;">
           <label for="dFlatInput" data-i18n="lblDFlat">Flat Cut Depth [mm]</label>
-          <input type="number" id="dFlatInput" min="0.2" max="100" step="0.1" value="2.0" />
+          <input type="number" id="dFlatInput" min="0.2" max="40" step="0.1" value="1.0" />
         </div>
       </div>
 
@@ -492,11 +504,11 @@
         <div id="hubFields" class="two-col hidden">
           <div class="group" style="margin-bottom:0;">
             <label for="hubDiaInput" data-i18n="lblHubDia">Boss Dia [mm]</label>
-            <input type="number" id="hubDiaInput" min="1" max="500" step="0.5" value="36" />
+            <input type="number" id="hubDiaInput" min="6" max="250" step="0.5" value="18" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="hubHeightInput" data-i18n="lblHubHeight">Boss Height [mm]</label>
-            <input type="number" id="hubHeightInput" min="0.5" max="500" step="0.5" value="16" />
+            <input type="number" id="hubHeightInput" min="1" max="150" step="0.5" value="14" />
           </div>
         </div>
       </div>
@@ -513,15 +525,15 @@
         <div id="boltsFields" class="three-col hidden">
           <div class="group" style="margin-bottom:0;">
             <label for="boltCountInput" data-i18n="lblCount">Count</label>
-            <input type="number" id="boltCountInput" min="1" max="60" step="1" value="6" />
+            <input type="number" id="boltCountInput" min="1" max="12" step="1" value="6" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="boltDiaInput" data-i18n="lblHoleDia">Hole Ø [mm]</label>
-            <input type="number" id="boltDiaInput" min="0.5" max="200" step="0.5" value="5" />
+            <input type="number" id="boltDiaInput" min="1" max="16" step="0.1" value="5" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="boltPcdInput" data-i18n="lblPcdDia">PCD Ø [mm]</label>
-            <input type="number" id="boltPcdInput" min="1" max="1000" step="0.5" value="44" />
+            <input type="number" id="boltPcdInput" min="1" max="200" step="0.5" value="28" />
           </div>
         </div>
       </div>
@@ -538,15 +550,15 @@
         <div id="reliefFields" class="three-col hidden">
           <div class="group" style="margin-bottom:0;">
             <label for="reliefCountInput" data-i18n="lblCount">Count</label>
-            <input type="number" id="reliefCountInput" min="1" max="60" step="1" value="6" />
+            <input type="number" id="reliefCountInput" min="1" max="24" step="1" value="6" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="reliefDiaInput" data-i18n="lblHoleDia">Hole Ø [mm]</label>
-            <input type="number" id="reliefDiaInput" min="1" max="300" step="0.5" value="14" />
+            <input type="number" id="reliefDiaInput" min="2" max="60" step="0.5" value="14" />
           </div>
           <div class="group" style="margin-bottom:0;">
             <label for="reliefPcdInput" data-i18n="lblRingDia">Ring Ø [mm]</label>
-            <input type="number" id="reliefPcdInput" min="2" max="1000" step="0.5" value="64" />
+            <input type="number" id="reliefPcdInput" min="2" max="250" step="0.5" value="64" />
           </div>
         </div>
       </div>
@@ -604,7 +616,8 @@
         secGeom: "2. Geometria koła",
         lblTeeth: "Liczba zębów (Z)",
         lblShaftBore: "Otwór wału [mm]",
-        lblThickness: "Grubość wieńca (3D STL) [mm]",
+        lblThickness: "Grubość wieńca [mm]",
+        lblChamfer: "Faza zębów 45° [mm]",
         resetThicknessTitle: "Przywróć domyślną grubość",
         defaultThicknessFmt: (val) => `Domyślnie: ${val} mm`,
         secFeatures: "3. Otwór wału, piasta i mocowanie",
@@ -617,6 +630,7 @@
         subKeyway: "wpust",
         subDshaft: "wałek D",
         lblBoreProfile: "Profil otworu na wał",
+        lblBoreChamfer: "Faza otworu 45° [mm]",
         optBoreRound: "Okrągły (walcowy)",
         optBoreKeyway: "Z rowkiem wpustowym (DIN)",
         optBoreDshaft: "Wałek ścięty (D-Shaft)",
@@ -663,7 +677,8 @@
         secGeom: "2. Sprocket Geometry",
         lblTeeth: "Teeth (Z)",
         lblShaftBore: "Shaft Bore [mm]",
-        lblThickness: "Rim Thickness (3D STL) [mm]",
+        lblThickness: "Rim Thickness [mm]",
+        lblChamfer: "Tooth Chamfer 45° [mm]",
         resetThicknessTitle: "Reset to standard thickness",
         defaultThicknessFmt: (val) => `Default: ${val} mm`,
         secFeatures: "3. Bore, Shaft Boss & Fasteners",
@@ -676,6 +691,7 @@
         subKeyway: "keyway",
         subDshaft: "D-shaft",
         lblBoreProfile: "Shaft Bore Profile",
+        lblBoreChamfer: "Bore Chamfer 45° [mm]",
         optBoreRound: "Round (Circle)",
         optBoreKeyway: "Keyway (DIN / Rectangular)",
         optBoreDshaft: "D-Shaft (Flat Cut)",
@@ -766,6 +782,7 @@
     const teethInput = document.getElementById("teethInput");
     const holeInput = document.getElementById("holeInput");
     const thicknessInput = document.getElementById("thicknessInput");
+    const chamferInput = document.getElementById("chamferInput");
     const resetThicknessBtn = document.getElementById("resetThicknessBtn");
     const stepsInput = document.getElementById("stepsInput");
     const stepsValue = document.getElementById("stepsValue");
@@ -789,6 +806,7 @@
     const reliefTileSub = document.getElementById("reliefTileSub");
 
     const boreTypeSelect = document.getElementById("boreTypeSelect");
+    const boreChamferInput = document.getElementById("boreChamferInput");
     const keywayFields = document.getElementById("keywayFields");
     const keyWidthInput = document.getElementById("keyWidthInput");
     const keyDepthInput = document.getElementById("keyDepthInput");
@@ -1116,9 +1134,11 @@
       const N = parseInt(teethInput.value, 10);
       const holeDia = parseFloat(holeInput.value);
       const thickness = parseFloat(thicknessInput.value);
+      const chamfer = Math.max(0, parseFloat(chamferInput.value) || 0);
       const steps = parseInt(stepsInput.value, 10);
 
       const boreType = boreTypeSelect.value;
+      const boreChamfer = Math.max(0, parseFloat(boreChamferInput.value) || 0);
       const keyWidth = parseFloat(keyWidthInput.value) || 0;
       const keyDepth = parseFloat(keyDepthInput.value) || 0;
       const dFlat = parseFloat(dFlatInput.value) || 0;
@@ -1144,8 +1164,8 @@
       const reliefTag = hasRelief ? `_R${reliefCount}x${reliefDia}` : "";
       const base = `${chainShort}_Z${N}_D${Math.round(holeDia)}${boreTag}${boltTag}${reliefTag}`;
       return {
-        P, D, N, holeDia, thickness, steps,
-        boreType, keyWidth, keyDepth, dFlat,
+        P, D, N, holeDia, thickness, chamfer, steps,
+        boreType, boreChamfer, keyWidth, keyDepth, dFlat,
         hasHub, hubDia, hubHeight,
         hasBolts, boltCount, boltDia, boltPcd,
         hasRelief, reliefCount, reliefDia, reliefPcd,
@@ -1156,6 +1176,7 @@
 
     function syncFeatureUi() {
       const boreType = boreTypeSelect.value;
+      const boreChamfer = Math.max(0, parseFloat(boreChamferInput.value) || 0);
       keywayFields.classList.toggle("hidden", boreType !== "keyway");
       dshaftFields.classList.toggle("hidden", boreType !== "dshaft");
       boreTileSub.textContent = boreType === "round"
@@ -1484,6 +1505,47 @@
       return tris;
     }
 
+    // True turned-blank 45-deg OD chamfer (Boolean intersection of milled sprocket extrusion with chamfered cylinder):
+    // For any point (x, y) at radius r > rChamfer, the turned bevel starts at z = cEff - (r - rChamfer) on the bottom
+    // and z = zRim - (cEff - (r - rChamfer)) on the top!
+    // That makes the intersection curve on the tooth flank a smooth 45-deg plane cut (zero jagged steps/teeth),
+    // while the outer cylindrical OD band (r = maxOuterR) has full chamfer height cEff!
+    function subdivideAndClampLoopToRadius(loopCCW, rChamfer) {
+      const n = loopCCW.length;
+      const fullPts = [];
+      const clampedPts = [];
+
+      for (let i = 0; i < n; i++) {
+        const p0 = loopCCW[i];
+        const p1 = loopCCW[(i + 1) % n];
+        const r0 = Math.hypot(p0[0], p0[1]);
+        const r1 = Math.hypot(p1[0], p1[1]);
+
+        fullPts.push(p0);
+        clampedPts.push(r0 > rChamfer ? [p0[0] * (rChamfer / r0), p0[1] * (rChamfer / r0)] : p0);
+
+        if ((r0 < rChamfer - 1e-6 && r1 > rChamfer + 1e-6) || (r0 > rChamfer + 1e-6 && r1 < rChamfer - 1e-6)) {
+          const dx = p1[0] - p0[0];
+          const dy = p1[1] - p0[1];
+          const a = dx * dx + dy * dy;
+          const b = 2 * (p0[0] * dx + p0[1] * dy);
+          const c = p0[0] * p0[0] + p0[1] * p0[1] - rChamfer * rChamfer;
+          const disc = Math.max(0, b * b - 4 * a * c);
+          const sqrtD = Math.sqrt(disc);
+          const t1 = (-b - sqrtD) / (2 * a);
+          const t2 = (-b + sqrtD) / (2 * a);
+          const t = (t1 > 1e-5 && t1 < 1 - 1e-5) ? t1 : ((t2 > 1e-5 && t2 < 1 - 1e-5) ? t2 : -1);
+          if (t > 0) {
+            const ix = p0[0] + t * dx;
+            const iy = p0[1] + t * dy;
+            fullPts.push([ix, iy]);
+            clampedPts.push([ix, iy]);
+          }
+        }
+      }
+      return { fullPts, clampedPts };
+    }
+
     function generateSprocketMesh(pts, params) {
       let minOuterR = Infinity;
       let maxOuterR = 1;
@@ -1493,16 +1555,41 @@
         maxOuterR = Math.max(maxOuterR, r);
       }
 
+      const toothDepth = Math.max(0, maxOuterR - minOuterR);
+      const z0 = 0;
+      const zRim = params.thickness;
+      const cEff = Math.min(Math.max(0, params.chamfer || 0), Math.min(zRim * 0.35, toothDepth * 0.85));
+
       const maxBoreAllowed = minOuterR * 0.92;
       const hasBore = params.holeDia > 0 && params.holeDia / 2 < maxBoreAllowed;
       const boreLoop = hasBore ? cleanLoop(generateBorePolygon(params, 72)) : [];
       if (boreLoop.length > 0 && signedArea2D(boreLoop) < 0) boreLoop.reverse();
 
+      const maxBoreWallClearance = Math.max(0, maxBoreAllowed - params.holeDia / 2 - 0.3);
+      const bChamfer = hasBore
+        ? Math.min(Math.max(0, params.boreChamfer || 0), Math.min(zRim * 0.35, params.holeDia * 0.25, maxBoreWallClearance))
+        : 0;
+
+      let boreChamferLoop = boreLoop;
+      if (hasBore && bChamfer > 0.02 && boreLoop.length >= 3) {
+        const expandedParams = {
+          ...params,
+          holeDia: params.holeDia + 2 * bChamfer,
+          keyWidth: params.keyWidth + 2 * bChamfer,
+          keyDepth: params.keyDepth,
+          dFlat: params.dFlat + bChamfer
+        };
+        const candLoop = cleanLoop(generateBorePolygon(expandedParams, 72));
+        if (candLoop.length === boreLoop.length) {
+          if (signedArea2D(candLoop) < 0) candLoop.reverse();
+          boreChamferLoop = candLoop;
+        }
+      }
+      const hasBoreChamfer = hasBore && bChamfer > 0.02 && boreChamferLoop !== boreLoop;
+
       const outerLoop = cleanLoop(pts);
       if (outerLoop.length > 0 && signedArea2D(outerLoop) < 0) outerLoop.reverse();
 
-      const z0 = 0;
-      const zRim = params.thickness;
       const useHub =
         params.hasHub &&
         params.hubHeight > zRim + 0.05 &&
@@ -1541,49 +1628,191 @@
         }
       }
 
-      addExtrudedWall(outerLoop, z0, zRim, true);
+      // True turned-blank 45-deg OD chamfer:
+      // Conical bevel surface r + |z - zBevelStart| = maxOuterR meets the vertical milled tooth flank
+      // along a smooth 3D curve where zBot(r) = max(0, r - rBlankChamfer) and zTop(r) = zRim - zBot(r).
+      if (cEff > 0.02) {
+        const rBlankChamfer = maxOuterR - cEff;
+        const { fullPts, clampedPts: outerChamferLoop } = subdivideAndClampLoopToRadius(outerLoop, rBlankChamfer);
+        const len = fullPts.length;
 
-      if (hasBore && boreLoop.length >= 3) {
-        addExtrudedWall(boreLoop, z0, zHub, false);
-      }
+        for (let i = 0; i < len; i++) {
+          const j = (i + 1) % len;
+          const p0 = fullPts[i];
+          const p1 = fullPts[j];
+          const c0 = outerChamferLoop[i];
+          const c1 = outerChamferLoop[j];
 
-      for (const hc of allCutouts) {
-        addExtrudedWall(hc.loop, z0, hc.inHub ? zHub : zRim, false);
-      }
+          const isUnchamferedFlank = samePt2D(p0, c0) && samePt2D(p1, c1);
+          if (isUnchamferedFlank) {
+            addTri([p0[0], p0[1], z0], [p1[0], p1[1], z0], [p1[0], p1[1], zRim]);
+            addTri([p0[0], p0[1], z0], [p1[0], p1[1], zRim], [p0[0], p0[1], zRim]);
+          } else {
+            const r0 = Math.hypot(p0[0], p0[1]);
+            const r1 = Math.hypot(p1[0], p1[1]);
+            const dz0 = Math.max(0, Math.min(cEff, r0 - rBlankChamfer));
+            const dz1 = Math.max(0, Math.min(cEff, r1 - rBlankChamfer));
+            const zB0 = z0 + dz0;
+            const zB1 = z0 + dz1;
+            const zT0 = zRim - dz0;
+            const zT1 = zRim - dz1;
 
-      const bottomHoles = [];
-      if (hasBore && boreLoop.length >= 3) bottomHoles.push(boreLoop);
-      for (const hc of allCutouts) bottomHoles.push(hc.loop);
+            // Bottom conical turned bevel (degenerate triangles at exact crossing vertex where dz=0 are skipped)
+            if (dz0 > 1e-6 || dz1 > 1e-6) {
+              if (!samePt2D(c0, c1)) {
+                addTri([c0[0], c0[1], z0], [c1[0], c1[1], z0], [p1[0], p1[1], zB1]);
+              }
+              if (dz0 > 1e-6) {
+                addTri([c0[0], c0[1], z0], [p1[0], p1[1], zB1], [p0[0], p0[1], zB0]);
+              }
+            }
 
-      const bottomTris = triangulatePolygonWithHoles(outerLoop, bottomHoles);
-      for (const [a, b, c] of bottomTris) {
-        addTri([a[0], a[1], z0], [c[0], c[1], z0], [b[0], b[1], z0]);
-      }
+            // Vertical milled tooth wall between bottom and top bevel curves
+            addTri([p0[0], p0[1], zB0], [p1[0], p1[1], zB1], [p1[0], p1[1], zT1]);
+            addTri([p0[0], p0[1], zB0], [p1[0], p1[1], zT1], [p0[0], p0[1], zT0]);
 
-      if (useHub) {
-        const rimTopHoles = [hubLoop];
+            // Top conical turned bevel
+            if (dz0 > 1e-6 || dz1 > 1e-6) {
+              if (!samePt2D(c0, c1)) {
+                addTri([p0[0], p0[1], zT0], [p1[0], p1[1], zT1], [c1[0], c1[1], zRim]);
+              }
+              if (dz0 > 1e-6) {
+                addTri([p0[0], p0[1], zT0], [c1[0], c1[1], zRim], [c0[0], c0[1], zRim]);
+              }
+            }
+          }
+        }
+
+        if (hasBore && boreLoop.length >= 3) {
+          if (hasBoreChamfer) {
+            const lenB = boreLoop.length;
+            const zBoreBot = z0 + bChamfer;
+            const zBoreTop = zHub - bChamfer;
+            for (let i = 0; i < lenB; i++) {
+              const j = (i + 1) % lenB;
+              const b0 = boreLoop[i], b1 = boreLoop[j];
+              const c0 = boreChamferLoop[i], c1 = boreChamferLoop[j];
+              // Bottom 45-deg bore bevel (eliminates elephant's foot on 3D print bed)
+              addTri([c1[0], c1[1], z0], [c0[0], c0[1], z0], [b0[0], b0[1], zBoreBot]);
+              addTri([c1[0], c1[1], z0], [b0[0], b0[1], zBoreBot], [b1[0], b1[1], zBoreBot]);
+              // Vertical inner bore wall
+              addTri([b1[0], b1[1], zBoreBot], [b0[0], b0[1], zBoreBot], [b0[0], b0[1], zBoreTop]);
+              addTri([b1[0], b1[1], zBoreBot], [b0[0], b0[1], zBoreTop], [b1[0], b1[1], zBoreTop]);
+              // Top 45-deg bore bevel
+              addTri([b1[0], b1[1], zBoreTop], [b0[0], b0[1], zBoreTop], [c0[0], c0[1], zHub]);
+              addTri([b1[0], b1[1], zBoreTop], [c0[0], c0[1], zHub], [c1[0], c1[1], zHub]);
+            }
+          } else {
+            addExtrudedWall(boreLoop, z0, zHub, false);
+          }
+        }
+
         for (const hc of allCutouts) {
-          if (!hc.inHub) rimTopHoles.push(hc.loop);
-        }
-        const rimTopTris = triangulatePolygonWithHoles(outerLoop, rimTopHoles);
-        for (const [a, b, c] of rimTopTris) {
-          addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          addExtrudedWall(hc.loop, z0, hc.inHub ? zHub : zRim, false);
         }
 
-        addExtrudedWall(hubLoop, zRim, zHub, true);
+        const capBoreLoop = hasBoreChamfer ? boreChamferLoop : boreLoop;
+        const bottomHoles = [];
+        if (hasBore && capBoreLoop.length >= 3) bottomHoles.push(capBoreLoop);
+        for (const hc of allCutouts) bottomHoles.push(hc.loop);
 
-        const hubTopHoles = [];
-        if (hasBore && boreLoop.length >= 3) hubTopHoles.push(boreLoop);
-        for (const hc of allCutouts) {
-          if (hc.inHub) hubTopHoles.push(hc.loop);
+        const bottomTris = triangulatePolygonWithHoles(outerChamferLoop, bottomHoles);
+        for (const [a, b, c] of bottomTris) {
+          addTri([a[0], a[1], z0], [c[0], c[1], z0], [b[0], b[1], z0]);
         }
-        const hubTopTris = triangulatePolygonWithHoles(hubLoop, hubTopHoles);
-        for (const [a, b, c] of hubTopTris) {
-          addTri([a[0], a[1], zHub], [b[0], b[1], zHub], [c[0], c[1], zHub]);
+
+        if (useHub) {
+          const rimTopHoles = [hubLoop];
+          for (const hc of allCutouts) {
+            if (!hc.inHub) rimTopHoles.push(hc.loop);
+          }
+          const rimTopTris = triangulatePolygonWithHoles(outerChamferLoop, rimTopHoles);
+          for (const [a, b, c] of rimTopTris) {
+            addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          }
+
+          addExtrudedWall(hubLoop, zRim, zHub, true);
+
+          const hubTopHoles = [];
+          if (hasBore && capBoreLoop.length >= 3) hubTopHoles.push(capBoreLoop);
+          for (const hc of allCutouts) {
+            if (hc.inHub) hubTopHoles.push(hc.loop);
+          }
+          const hubTopTris = triangulatePolygonWithHoles(hubLoop, hubTopHoles);
+          for (const [a, b, c] of hubTopTris) {
+            addTri([a[0], a[1], zHub], [b[0], b[1], zHub], [c[0], c[1], zHub]);
+          }
+        } else {
+          for (const [a, b, c] of bottomTris) {
+            addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          }
         }
       } else {
+        addExtrudedWall(outerLoop, z0, zRim, true);
+
+        if (hasBore && boreLoop.length >= 3) {
+          if (hasBoreChamfer) {
+            const lenB = boreLoop.length;
+            const zBoreBot = z0 + bChamfer;
+            const zBoreTop = zHub - bChamfer;
+            for (let i = 0; i < lenB; i++) {
+              const j = (i + 1) % lenB;
+              const b0 = boreLoop[i], b1 = boreLoop[j];
+              const c0 = boreChamferLoop[i], c1 = boreChamferLoop[j];
+              // Bottom 45-deg bore bevel (eliminates elephant's foot on 3D print bed)
+              addTri([c1[0], c1[1], z0], [c0[0], c0[1], z0], [b0[0], b0[1], zBoreBot]);
+              addTri([c1[0], c1[1], z0], [b0[0], b0[1], zBoreBot], [b1[0], b1[1], zBoreBot]);
+              // Vertical inner bore wall
+              addTri([b1[0], b1[1], zBoreBot], [b0[0], b0[1], zBoreBot], [b0[0], b0[1], zBoreTop]);
+              addTri([b1[0], b1[1], zBoreBot], [b0[0], b0[1], zBoreTop], [b1[0], b1[1], zBoreTop]);
+              // Top 45-deg bore bevel
+              addTri([b1[0], b1[1], zBoreTop], [b0[0], b0[1], zBoreTop], [c0[0], c0[1], zHub]);
+              addTri([b1[0], b1[1], zBoreTop], [c0[0], c0[1], zHub], [c1[0], c1[1], zHub]);
+            }
+          } else {
+            addExtrudedWall(boreLoop, z0, zHub, false);
+          }
+        }
+
+        for (const hc of allCutouts) {
+          addExtrudedWall(hc.loop, z0, hc.inHub ? zHub : zRim, false);
+        }
+
+        const capBoreLoop = hasBoreChamfer ? boreChamferLoop : boreLoop;
+        const bottomHoles = [];
+        if (hasBore && capBoreLoop.length >= 3) bottomHoles.push(capBoreLoop);
+        for (const hc of allCutouts) bottomHoles.push(hc.loop);
+
+        const bottomTris = triangulatePolygonWithHoles(outerLoop, bottomHoles);
         for (const [a, b, c] of bottomTris) {
-          addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          addTri([a[0], a[1], z0], [c[0], c[1], z0], [b[0], b[1], z0]);
+        }
+
+        if (useHub) {
+          const rimTopHoles = [hubLoop];
+          for (const hc of allCutouts) {
+            if (!hc.inHub) rimTopHoles.push(hc.loop);
+          }
+          const rimTopTris = triangulatePolygonWithHoles(outerLoop, rimTopHoles);
+          for (const [a, b, c] of rimTopTris) {
+            addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          }
+
+          addExtrudedWall(hubLoop, zRim, zHub, true);
+
+          const hubTopHoles = [];
+          if (hasBore && capBoreLoop.length >= 3) hubTopHoles.push(capBoreLoop);
+          for (const hc of allCutouts) {
+            if (hc.inHub) hubTopHoles.push(hc.loop);
+          }
+          const hubTopTris = triangulatePolygonWithHoles(hubLoop, hubTopHoles);
+          for (const [a, b, c] of hubTopTris) {
+            addTri([a[0], a[1], zHub], [b[0], b[1], zHub], [c[0], c[1], zHub]);
+          }
+        } else {
+          for (const [a, b, c] of bottomTris) {
+            addTri([a[0], a[1], zRim], [b[0], b[1], zRim], [c[0], c[1], zRim]);
+          }
         }
       }
 
@@ -2124,6 +2353,34 @@
       ctx.closePath();
       ctx.stroke();
 
+      // Turned-blank 45-deg OD chamfer indicator arcs on tooth tips ONLY (where r > maxR - cEff)
+      const toothDepth = Math.max(0, maxR - minOuterR);
+      const cEff = Math.min(Math.max(0, params.chamfer || 0), Math.min(params.thickness * 0.35, toothDepth * 0.85));
+      if (cEff > 0.02) {
+        const rBlankChamfer = maxR - cEff;
+        ctx.save();
+        ctx.strokeStyle = "rgba(74, 222, 128, 0.55)";
+        ctx.lineWidth = 1.0;
+        const len = pts.length;
+        for (let i = 0; i < len; i++) {
+          const [x0, y0] = pts[i];
+          const [x1, y1] = pts[(i + 1) % len];
+          const r0 = Math.hypot(x0, y0);
+          const r1 = Math.hypot(x1, y1);
+          if (r0 > rBlankChamfer || r1 > rBlankChamfer) {
+            const c0x = r0 > rBlankChamfer ? x0 * (rBlankChamfer / r0) : x0;
+            const c0y = r0 > rBlankChamfer ? y0 * (rBlankChamfer / r0) : y0;
+            const c1x = r1 > rBlankChamfer ? x1 * (rBlankChamfer / r1) : x1;
+            const c1y = r1 > rBlankChamfer ? y1 * (rBlankChamfer / r1) : y1;
+            ctx.beginPath();
+            ctx.moveTo(cx + c0x * scale, cy - c0y * scale);
+            ctx.lineTo(cx + c1x * scale, cy - c1y * scale);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+      }
+
       // Shaft bore preview
       if (params.holeDia > 0) {
         ctx.strokeStyle = "#38bdf8";
@@ -2145,6 +2402,32 @@
             ctx.closePath();
             ctx.stroke();
           }
+        }
+
+        const bChamf2d = Math.min(Math.max(0, params.boreChamfer || 0), Math.min(params.thickness * 0.35, params.holeDia * 0.25));
+        if (bChamf2d > 0.02) {
+          ctx.save();
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.5)";
+          ctx.lineWidth = 1.0;
+          const chamfParams = {
+            ...params,
+            holeDia: params.holeDia + 2 * bChamf2d,
+            keyWidth: params.keyWidth + 2 * bChamf2d,
+            dFlat: params.dFlat + bChamf2d
+          };
+          const cPts = generateBorePolygon(chamfParams, 96);
+          if (cPts.length > 0) {
+            ctx.beginPath();
+            cPts.forEach(([x, y], idx) => {
+              const px = cx + x * scale;
+              const py = cy - y * scale;
+              if (idx === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            });
+            ctx.closePath();
+            ctx.stroke();
+          }
+          ctx.restore();
         }
       }
 
@@ -2293,8 +2576,8 @@
 
     chainSelect.addEventListener("change", () => { syncChainFields(); drawPreview(); });
     [
-      pitchInput, rollerInput, teethInput, holeInput, thicknessInput, stepsInput,
-      boreTypeSelect, keyWidthInput, keyDepthInput, dFlatInput,
+      pitchInput, rollerInput, teethInput, holeInput, thicknessInput, chamferInput, stepsInput,
+      boreTypeSelect, boreChamferInput, keyWidthInput, keyDepthInput, dFlatInput,
       hubEnabledSelect, hubDiaInput, hubHeightInput,
       boltsEnabledSelect, boltCountInput, boltDiaInput, boltPcdInput,
       reliefEnabledSelect, reliefCountInput, reliefDiaInput, reliefPcdInput
